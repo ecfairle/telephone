@@ -1,16 +1,14 @@
-import Canvas from '@/components/canvas';
+import Canvas from '@/app/canvas/[game_drawing_id]/canvas';
+import { fetchGames } from '@/lib/data';
+import Link from 'next/link';
 
-export default function Home() {
-  return (
-      <section className='py-24'>
-        <div className='container'>
-          <h1 className='text-3xl font-bold'>React Sketch Canvas</h1>
-          <p className='text-sm text-muted-foreground'>
-            Freehand vector drawing for React using SVG as canvas
-          </p>
-
-          <Canvas />
-        </div>
-      </section>
-  )
+export default async function Home() {
+  const drawings = await fetchGames('410544b2-4001-4271-9855-fec4b6a6442a');
+  return (<div className={"container"}>
+    <p> {drawings.length > 0 ?
+        <Link
+            href={{
+              pathname: `/canvas/${drawings[0].id}`}}
+        > {"Start drawing your word " + drawings[0].target_word}</Link> : "NO WORDS"}</p>
+  </div>)
 }
