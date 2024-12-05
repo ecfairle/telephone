@@ -4,11 +4,8 @@ const client = await db.connect();
 
 async function listGuessers() {
 	const data = await client.sql`
-    SELECT game_drawings.drawer_id,
-           game_drawings.guesser_id
-    FROM game_drawings
-    WHERE game_drawings.guesser_id is not null AND game_drawings.image is not null AND game_drawings.target_word is null`;
-
+    SELECT game_drawings.*
+    FROM game_drawings;`
 	return data.rows;
 }
 async function listDrawers() {

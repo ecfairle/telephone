@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type ChangeEvent } from 'react'
-
+import { useOutsideAlerter } from '@/lib/utils'
 import {
     ReactSketchCanvas,
     type ReactSketchCanvasRef
@@ -10,13 +10,14 @@ import {
 import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
 
-export default function Canvas({secretWord}) {
+export default function Canvas({secretWord, gameDrawingId}) {
     const colorInputRef = useRef<HTMLInputElement>(null)
-    const sizeInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#a855f7')
     const [strokeWidth, setStrokeWidth] = useState(4)
     const [eraseMode, setEraseMode] = useState(false)
+    const [word, setSecretWord] = useState(secretWord);
+    const [displaySizeSelector, setDisplaySizeSelector] = useState(false);
 
     function handleStrokeColorChange(event: ChangeEvent<HTMLInputElement>) {
         setStrokeColor(event.target.value)
@@ -50,24 +51,36 @@ export default function Canvas({secretWord}) {
     }
 
     async function handleSave() {
-        const dataURL = await canvasRef.current?.exportImage('png')
-        if (dataURL) {
-            const link = Object.assign(document.createElement('a'), {
-                href: dataURL,
-                style: { display: 'none' },
-                download: 'sketch.png'
+        const dataURL = await canvasRef.current?.exportImage('png');
+        const res = await fetch(`http://localhost:3000/upload_url`,{
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                file: gameDrawingId
             })
-
-            document.body.appendChild(link)
-            link.click()
-            link.remove()
-        }
+        })
+        const url = await res.json();
+        if (url) setSecretWord(url);
+        // if (dataURL) {
+        //     const link = Object.assign(document.createElement('a'), {
+        //         href: dataURL,
+        //         style: { display: 'none' },
+        //         download: 'sketch.png'
+        //     })
+        //
+        //     document.body.appendChild(link)
+        //     link.click()
+        //     link.remove()
+        // }
     }
 
     return (
         <section className='py-24'>
             <div className='container'>
-                <h1 className='text-3xl font-bold justify-center'>{secretWord}</h1>
+                <h1 className='text-3xl font-bold justify-center'>{word}</h1>
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
                         width='100%'
@@ -100,20 +113,25 @@ export default function Canvas({secretWord}) {
                         <Button
                             size='icon'
                             type='button'
-                            onClick={() => sizeInputRef.current?.click()}
+                            onClick={() => setDisplaySizeSelector(true)}
                         >
 
-                            <Circle size={strokeWidth}/>
+                            <Circle size={strokeWidth*10}/>
 
                         </Button>
-                        <input
+                        {displaySizeSelector ?
+                        <OutsideAlerter setOpen={setDisplaySizeSelector}>
+                            <input
                             type='range'
                             min={4}
                             max={14}
-                            ref={sizeInputRef}
                             value={strokeWidth}
                             onChange={handleStrokeWidthChange}
                         />
+                            </OutsideAlerter>
+                            : null
+                        }
+
                         {/* Drawing mode */}
                         <div className='flex flex-col gap-3 pt-6'>
                             <Button
@@ -178,3 +196,12 @@ export default function Canvas({secretWord}) {
         </section>
             )
             }
+
+/**
+ * Component that alerts if you click outside of it
+ */
+function OutsideAlerter({children, setOpen}) {
+    const wrapperRef = useRef(null);
+    useOutsideAlerter(wrapperRef, setOpen);
+    return <div ref={wrapperRef}><div>{children}</div></div>;
+}

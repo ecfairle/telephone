@@ -147,7 +147,7 @@ async function seedGames() {
 export async function GET() {
     try {
       await client.sql`BEGIN`;
-      // await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; `;
+      await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; `;
       await seedUsers();
       await seedGames();
       await client.sql`COMMIT`;

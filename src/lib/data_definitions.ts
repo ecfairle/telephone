@@ -16,7 +16,8 @@ export type GameDrawing = {
     target_word: string,
     image: string,
     guesser_name: string,
-    drawer_name: string
+    drawer_name: string,
+    base64_image: string
 }
 
 // CREATE TABLE IF NOT EXISTS games (
