@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type ChangeEvent } from 'react'
-import { useOutsideAlerter } from '@/lib/utils'
+import { OpenableComponent } from '@/lib/utils'
 import {
     ReactSketchCanvas,
     type ReactSketchCanvasRef
@@ -9,6 +9,7 @@ import {
 
 import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
+import { saveImageToGCS } from '@/lib/utils'
 
 export default function Canvas({secretWord, gameDrawingId}) {
     const colorInputRef = useRef<HTMLInputElement>(null)
@@ -52,29 +53,7 @@ export default function Canvas({secretWord, gameDrawingId}) {
 
     async function handleSave() {
         const dataURL = await canvasRef.current?.exportImage('png');
-        const res = await fetch(`http://localhost:3000/upload_url`,{
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                file: gameDrawingId
-            })
-        })
-        const url = await res.json();
-        if (url) setSecretWord(url);
-        // if (dataURL) {
-        //     const link = Object.assign(document.createElement('a'), {
-        //         href: dataURL,
-        //         style: { display: 'none' },
-        //         download: 'sketch.png'
-        //     })
-        //
-        //     document.body.appendChild(link)
-        //     link.click()
-        //     link.remove()
-        // }
+        saveImageToGCS(dataURL);
     }
 
     return (
@@ -116,92 +95,120 @@ export default function Canvas({secretWord, gameDrawingId}) {
                             onClick={() => setDisplaySizeSelector(true)}
                         >
 
-                            <Circle size={strokeWidth*10}/>
+                            <Circle size={strokeWidth * 10}/>
 
                         </Button>
-                        {displaySizeSelector ?
-                        <OutsideAlerter setOpen={setDisplaySizeSelector}>
-                            <input
-                            type='range'
-                            min={4}
-                            max={14}
-                            value={strokeWidth}
-                            onChange={handleStrokeWidthChange}
-                        />
-                            </OutsideAlerter>
-                            : null
-                        }
+                        <OpenableComponent setOpen={setDisplaySizeSelector}>
+                        <dialog open={displaySizeSelector}>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={() => {
+                                        setStrokeWidth(4);
+                                        setDisplaySizeSelector(false);
+                                    }}
+                                >
+                                    <Circle size={4}/>
+                                </Button>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={() => {
+                                        setStrokeWidth(8);
+                                        setDisplaySizeSelector(false);
+                                    }}
+                                >
+                                    <Circle size={8}/>
+                                </Button>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={() => {
+                                        setStrokeWidth(12);
+                                        setDisplaySizeSelector(false);
+                                    }}
+                                >
+                                    <Circle size={12}/>
+                                </Button>
+                        </dialog>
+                        </OpenableComponent>
+                        {/*{displaySizeSelector ?*/}
+                        {/*    <OpenableComponent setOpen={setDisplaySizeSelector}>*/}
+                        {/*        <input*/}
+                        {/*            type='range'*/}
+                        {/*            min={4}*/}
+                        {/*            max={14}*/}
+                        {/*            value={strokeWidth}*/}
+                        {/*                onChange={handleStrokeWidthChange}*/}
+                        {/*            />*/}
+                        {/*        </OpenableComponent>*/}
+                        {/*        : null*/}
+                        {/*    }*/}
 
-                        {/* Drawing mode */}
-                        <div className='flex flex-col gap-3 pt-6'>
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                disabled={!eraseMode}
-                                onClick={handlePenClick}
-                            >
-                                <Pen size={16}/>
-                            </Button>
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                disabled={eraseMode}
-                                onClick={handleEraserClick}
-                            >
-                                <Eraser size={16}/>
-                            </Button>
-                        </div>
+                            {/* Drawing mode */}
+                            <div className='flex flex-col gap-3 pt-6'>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    disabled={!eraseMode}
+                                    onClick={handlePenClick}
+                                >
+                                    <Pen size={16}/>
+                                </Button>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    disabled={eraseMode}
+                                    onClick={handleEraserClick}
+                                >
+                                    <Eraser size={16}/>
+                                </Button>
+                            </div>
 
-                        {/* Actions */}
-                        <div className='flex flex-col gap-3 pt-6'>
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                onClick={handleUndoClick}
-                            >
-                                <Undo size={16}/>
-                            </Button>
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                onClick={handleRedoClick}
-                            >
-                                <Redo size={16}/>
-                            </Button>
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                onClick={handleClearClick}
-                            >
-                                <RotateCcw size={16}/>
-                            </Button>
+                            {/* Actions */}
+                            <div className='flex flex-col gap-3 pt-6'>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={handleUndoClick}
+                                >
+                                    <Undo size={16}/>
+                                </Button>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={handleRedoClick}
+                                >
+                                    <Redo size={16}/>
+                                </Button>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={handleClearClick}
+                                >
+                                    <RotateCcw size={16}/>
+                                </Button>
 
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                onClick={handleSave}
-                            >
-                                <Save size={16}/>
-                            </Button>
-                        </div>
+                                <Button
+                                    size='icon'
+                                    type='button'
+                                    variant='outline'
+                                    onClick={handleSave}
+                                >
+                                    <Save size={16}/>
+                                </Button>
+                            </div>
                     </div>
                 </div>
             </div>
         </section>
             )
             }
-
-/**
- * Component that alerts if you click outside of it
- */
-function OutsideAlerter({children, setOpen}) {
-    const wrapperRef = useRef(null);
-    useOutsideAlerter(wrapperRef, setOpen);
-    return <div ref={wrapperRef}><div>{children}</div></div>;
-}

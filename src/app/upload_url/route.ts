@@ -19,11 +19,19 @@ export async function POST(
         })
     }
     const bucket = storage.bucket(process.env.BUCKET_NAME);
-    const file = bucket.file(loadedParams.file as string);
+    const file = bucket.file('test/test.png');
     const options = {
-        expires: Date.now() + 5 * 60 * 1000, //  5 minutes,
+        expires: Date.now() + 25 * 60 * 1000, //  25 minutes,
         fields: { "x-goog-meta-source": "nextjs-project" },
     };
-    const [response] = await file.generateSignedPostPolicyV4(options);
+    let response = {};
+    try {[response] = await file.generateSignedPostPolicyV4(options);}
+    catch (error) {
+        console.log(error);
+        return new Response('Failed to generate signed link', {
+            status: 500,
+        })
+    }
+    console.log(response.url);
     return Response.json(response);
 }
