@@ -35,3 +35,40 @@ export async function POST(
     console.log(response.url);
     return Response.json(response);
 }
+
+export async function GET(
+    request: NextRequest
+) {
+    const filename = await request.nextUrl.searchParams.get('filename');
+    console.log(`filename ${filename}`);
+    console.log(process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n'));
+    const storage = new Storage({
+        projectId: process.env.PROJECT_ID,
+        credentials: {
+            client_email: process.env.CLIENT_EMAIL,
+            private_key: process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n'),
+        },
+    });
+    if (!process.env.BUCKET_NAME) {
+        return new Response('Undefined bucket name', {
+            status: 500,
+        })
+    }
+    const bucket = storage.bucket(process.env.BUCKET_NAME);
+    const file = bucket.file(`test/${filename}`);
+    const options = {
+        expires: Date.now() + 25 * 60 * 1000, // 25 minutes,
+        action: 'read',
+        version: 'v4'
+    };
+    let response = {};
+    try {[response] = await file.getSignedUrl(options);}
+    catch (error) {
+        console.log(error);
+        return new Response('Failed to generate signed link', {
+            status: 500,
+        })
+    }
+    console.log(Object.keys(response));
+    return Response.json(response);
+}

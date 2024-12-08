@@ -49,7 +49,8 @@ export default function Canvas({secretWord, gameDrawingId}) {
 
     async function handleSave() {
         const dataURL = await canvasRef.current?.exportImage('png');
-        saveImageToGCS(dataURL, `${gameDrawingId}.png`);
+        const response = await saveImageToGCS(dataURL, `${gameDrawingId}.png`);
+        setSecretWord(await response.json());
     }
 
     return (
