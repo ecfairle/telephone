@@ -1,5 +1,5 @@
 import Canvas from './canvas';
-import {fetchGameDrawing, addDrawingImage} from '@/lib/data';
+import { fetchGameDrawing } from '@/lib/data';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

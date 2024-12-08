@@ -30,10 +30,6 @@ export default function Canvas({secretWord, gameDrawingId}) {
         canvasRef.current?.eraseMode(true)
     }
 
-    function handleStrokeWidthChange(event: ChangeEvent<HTMLInputElement>) {
-        setStrokeWidth(Number(event.target.value));
-    }
-
     function handlePenClick() {
         setEraseMode(false)
         canvasRef.current?.eraseMode(false)
@@ -53,7 +49,7 @@ export default function Canvas({secretWord, gameDrawingId}) {
 
     async function handleSave() {
         const dataURL = await canvasRef.current?.exportImage('png');
-        saveImageToGCS(dataURL);
+        saveImageToGCS(dataURL, `${gameDrawingId}.png`);
     }
 
     return (

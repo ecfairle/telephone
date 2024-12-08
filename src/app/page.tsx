@@ -1,4 +1,3 @@
-import Canvas from '@/app/canvas/[game_drawing_id]/canvas';
 import { fetchGames } from '@/lib/data';
 import Link from 'next/link';
 

@@ -47,7 +47,7 @@ export async function saveImageToGCS(dataURL, filename) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            file: filename
+            filename
         })
     })
     const url = await res.json();

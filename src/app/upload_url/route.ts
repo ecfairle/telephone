@@ -1,10 +1,10 @@
 import {NextRequest} from "next/server";
-import { SignedPostPolicyV4Output } from "@google-cloud/storage";
 import { Storage } from "@google-cloud/storage";
 export async function POST(
-    req: NextRequest, { body }: { body: Promise<{ image: string, user_id: string, game_drawing_id: string }>}
+    request: NextRequest
 ) {
-    const loadedParams = await req.json();
+    const loadedParams = await request.json();
+    console.log(loadedParams)
     console.log(process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n'));
     const storage = new Storage({
         projectId: process.env.PROJECT_ID,
@@ -19,7 +19,7 @@ export async function POST(
         })
     }
     const bucket = storage.bucket(process.env.BUCKET_NAME);
-    const file = bucket.file('test/test.png');
+    const file = bucket.file(`test/${loadedParams.filename}`);
     const options = {
         expires: Date.now() + 25 * 60 * 1000, //  25 minutes,
         fields: { "x-goog-meta-source": "nextjs-project" },
