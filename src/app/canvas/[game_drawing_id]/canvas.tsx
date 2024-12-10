@@ -17,7 +17,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
     const [strokeColor, setStrokeColor] = useState('#a855f7')
     const [strokeWidth, setStrokeWidth] = useState(4)
     const [eraseMode, setEraseMode] = useState(false)
-    const [word, setSecretWord] = useState(secretWord);
+    const [word] = useState(secretWord);
     const [displaySizeSelector, setDisplaySizeSelector] = useState(false);
 
     function handleStrokeColorChange(event: ChangeEvent<HTMLInputElement>) {
