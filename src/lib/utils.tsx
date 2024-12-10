@@ -40,7 +40,7 @@ export function OpenableComponent({children, setOpen} : {children: React.ReactNo
 }
 
 export async function saveImageToGCS(dataURL:string, filename:string) {
-    const res = await fetch(`http://localhost:3000/upload_url`,{
+    const res = await fetch(`/upload_url`,{
         method: 'POST',
         headers: {
             'Accept': 'application/json',
