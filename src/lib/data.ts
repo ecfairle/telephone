@@ -22,7 +22,7 @@ export async function fetchGameDrawing(user_id:string, game_drawing_id:string) {
 export async function addDrawingImage(user_id:string, game_drawing_id:string, image_url:string) {
     try {
         await sql<GameDrawing>`
-            UPDATE game_drawings SET image = image_url
+            UPDATE game_drawings SET image = ${image_url}
             WHERE game_drawings.drawer_id = ${user_id}
               AND game_drawings.id = ${game_drawing_id}
               AND game_drawings.target_word IS NOT NULL

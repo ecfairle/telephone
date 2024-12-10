@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { useEffect, useRef } from "react";
+import {MutableRefObject, useEffect, useRef} from "react";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
@@ -8,16 +8,16 @@ export function cn(...inputs: ClassValue[]) {
 
 
 /**
- * Hook that alerts clicks outside of the passed ref
+ * Hook that alerts clicks outside the passed ref
  */
-function useOutsideAlerter(ref,setOpen) {
+function useOutsideAlerter(ref: MutableRefObject<null|HTMLDivElement>, setOpen: (open: boolean) => void) {
 
     useEffect(() => {
         /**
          * Alert if clicked on outside of element
          */
-        function handleClickOutside(event) {
-            if (ref.current && !ref.current.contains(event.target)) {
+        function handleClickOutside(event: MouseEvent) {
+            if (ref.current && !ref.current?.contains(event.target as Node)) {
                 setOpen(false);
             }
         }
@@ -33,13 +33,13 @@ function useOutsideAlerter(ref,setOpen) {
 /**
  * Component that alerts if you click outside of it
  */
-export function OpenableComponent({children, setOpen}) {
-    const wrapperRef = useRef(null);
+export function OpenableComponent({children, setOpen} : {children: React.ReactNode, setOpen: (open: boolean) => void}) {
+    const wrapperRef:MutableRefObject<null> = useRef(null);
     useOutsideAlerter(wrapperRef, setOpen);
     return <div ref={wrapperRef}><div>{children}</div></div>;
 }
 
-export async function saveImageToGCS(dataURL, filename) {
+export async function saveImageToGCS(dataURL:string, filename:string) {
     const res = await fetch(`http://localhost:3000/upload_url`,{
         method: 'POST',
         headers: {
@@ -54,7 +54,7 @@ export async function saveImageToGCS(dataURL, filename) {
     const newUrl = new URL(url.url);
     const formData = new FormData();
 
-    Object.entries(url.fields).forEach(([key, value]) => formData.append(key, value));
+    Object.entries(url.fields).forEach(([key, value]) => formData.append(key, value as string));
     formData.append('file', dataURLtoFile(dataURL, filename) as Blob);
 
     return await fetch(newUrl, {
@@ -63,14 +63,16 @@ export async function saveImageToGCS(dataURL, filename) {
     })
 }
 
-function dataURLtoFile(dataurl, filename) {
-    var arr = dataurl.split(','),
-        mime = arr[0].match(/:(.*?);/)[1],
+function dataURLtoFile(dataurl:string, filename:string) {
+    const arr = dataurl.split(','),
+        mimeOrNull = arr[0].match(/:(.*?);/),
+        mime = mimeOrNull ? mimeOrNull[1] : 'image/png',
         bstr = atob(arr[arr.length - 1]),
         n = bstr.length,
         u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
+    let i = n;
+    while(i--){
+        u8arr[i] = bstr.charCodeAt(i);
     }
     return new File([u8arr], filename, {type:mime});
 }

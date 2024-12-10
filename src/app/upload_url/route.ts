@@ -1,16 +1,22 @@
 import {NextRequest} from "next/server";
-import { Storage } from "@google-cloud/storage";
+import { Storage, GetSignedUrlConfig } from "@google-cloud/storage";
+
 export async function POST(
     request: NextRequest
 ) {
     const loadedParams = await request.json();
     console.log(loadedParams)
-    console.log(process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n'));
+    if (!process.env.PRIVATE_KEY) {
+        return new Response('Undefined credentials', {
+            status: 500,
+        })
+    }
+    const privateKey = process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n');
     const storage = new Storage({
         projectId: process.env.PROJECT_ID,
         credentials: {
             client_email: process.env.CLIENT_EMAIL,
-            private_key: process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n'),
+            private_key: privateKey,
         },
     });
     if (!process.env.BUCKET_NAME) {
@@ -24,24 +30,29 @@ export async function POST(
         expires: Date.now() + 25 * 60 * 1000, //  25 minutes,
         fields: { "x-goog-meta-source": "nextjs-project" },
     };
-    let response = {};
-    try {[response] = await file.generateSignedPostPolicyV4(options);}
+
+    try {
+        const [response] = await file.generateSignedPostPolicyV4(options);
+        return Response.json(response);
+    }
     catch (error) {
         console.log(error);
         return new Response('Failed to generate signed link', {
             status: 500,
         })
     }
-    console.log(response.url);
-    return Response.json(response);
 }
 
 export async function GET(
     request: NextRequest
 ) {
-    const filename = await request.nextUrl.searchParams.get('filename');
+    const filename = request.nextUrl.searchParams.get('filename');
     console.log(`filename ${filename}`);
-    console.log(process.env.PRIVATE_KEY.split(String.raw`\n`).join('\n'));
+    if (!process.env.PRIVATE_KEY) {
+        return new Response('Undefined credentials', {
+            status: 500,
+        })
+    }
     const storage = new Storage({
         projectId: process.env.PROJECT_ID,
         credentials: {
@@ -56,19 +67,21 @@ export async function GET(
     }
     const bucket = storage.bucket(process.env.BUCKET_NAME);
     const file = bucket.file(`test/${filename}`);
-    const options = {
+    const options:GetSignedUrlConfig = {
         expires: Date.now() + 25 * 60 * 1000, // 25 minutes,
         action: 'read',
         version: 'v4'
     };
-    let response = {};
-    try {[response] = await file.getSignedUrl(options);}
+
+    try {
+        const [response] = await file.getSignedUrl(options);
+        return Response.json(response);
+    }
     catch (error) {
         console.log(error);
         return new Response('Failed to generate signed link', {
             status: 500,
         })
     }
-    console.log(Object.keys(response));
-    return Response.json(response);
+
 }

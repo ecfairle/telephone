@@ -11,7 +11,7 @@ import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
 import { saveImageToGCS } from '@/lib/utils'
 
-export default function Canvas({secretWord, gameDrawingId}) {
+export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
     const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#a855f7')
@@ -49,8 +49,11 @@ export default function Canvas({secretWord, gameDrawingId}) {
 
     async function handleSave() {
         const dataURL = await canvasRef.current?.exportImage('png');
-        const response = await saveImageToGCS(dataURL, `${gameDrawingId}.png`);
-        setSecretWord(await response.json());
+        if (!dataURL) {
+            console.log('failed to export canvas');
+            return;
+        }
+        await saveImageToGCS(dataURL, `${gameDrawingId}.png`);
     }
 
     return (
@@ -132,18 +135,6 @@ export default function Canvas({secretWord, gameDrawingId}) {
                                 </Button>
                         </dialog>
                         </OpenableComponent>
-                        {/*{displaySizeSelector ?*/}
-                        {/*    <OpenableComponent setOpen={setDisplaySizeSelector}>*/}
-                        {/*        <input*/}
-                        {/*            type='range'*/}
-                        {/*            min={4}*/}
-                        {/*            max={14}*/}
-                        {/*            value={strokeWidth}*/}
-                        {/*                onChange={handleStrokeWidthChange}*/}
-                        {/*            />*/}
-                        {/*        </OpenableComponent>*/}
-                        {/*        : null*/}
-                        {/*    }*/}
 
                             {/* Drawing mode */}
                             <div className='flex flex-col gap-3 pt-6'>
