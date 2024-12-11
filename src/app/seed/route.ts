@@ -37,22 +37,12 @@ const game_users = [
 
 const game_drawings = [
     {
-        id: 'd7854087-21f6-4178-a221-129103df791a',
-        game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
-        next_id: null,
-        drawer_id: null,
-        guesser_id: '41051234-4001-4271-9855-fec4b6a6442b',
-        target_word: null,
-        image: null,
-    },
-    {
         id: '2257f0df-4cd4-4ce7-a5ef-39a1b990b8fe',
         game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
-        next_id: 'd7854087-21f6-4178-a221-129103df791a',
-        drawer_id: '410544b2-4001-4271-9855-fec4b6a6442a',
+        drawing_done: false,
+        drawer_id: null,
         guesser_id: null,
         target_word: 'cloud',
-        image: null,
     }
 ];
 const client = await db.connect();
@@ -123,7 +113,7 @@ async function seedGames() {
     CREATE TABLE IF NOT EXISTS game_drawings (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
       game_id UUID NOT NULL REFERENCES games,
-      next_id UUID REFERENCES game_drawings(id),
+      drawing_done boolean NOT NULL,
       drawer_id UUID REFERENCES users,
       guesser_id UUID REFERENCES users,
       target_word TEXT,
@@ -134,8 +124,8 @@ async function seedGames() {
     await Promise.all(
         game_drawings.map(async (game_drawing) => {
             return client.sql`
-        INSERT INTO game_drawings (id, game_id, next_id, drawer_id, guesser_id, target_word, image)
-        VALUES (${game_drawing.id}, ${game_drawing.game_id}, ${game_drawing.next_id}, ${game_drawing.drawer_id}, ${game_drawing.guesser_id}, ${game_drawing.target_word}, ${game_drawing.image})
+        INSERT INTO game_drawings (id, game_id, drawer_id, guesser_id, target_word, drawing_done)
+        VALUES (${game_drawing.id}, ${game_drawing.game_id}, ${game_drawing.drawer_id}, ${game_drawing.guesser_id}, ${game_drawing.target_word}, ${game_drawing.drawing_done})
         ON CONFLICT (id) DO NOTHING;
       `;
         }),

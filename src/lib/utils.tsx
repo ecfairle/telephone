@@ -39,7 +39,7 @@ export function OpenableComponent({children, setOpen} : {children: React.ReactNo
     return <div ref={wrapperRef}><div>{children}</div></div>;
 }
 
-export async function saveImageToGCS(dataURL:string, filename:string) {
+export async function saveImageToGCS(dataURL:string, filename:string, gameDrawingId:string) {
     const res = await fetch(`/upload_url`,{
         method: 'POST',
         headers: {
@@ -57,9 +57,20 @@ export async function saveImageToGCS(dataURL:string, filename:string) {
     Object.entries(url.fields).forEach(([key, value]) => formData.append(key, value as string));
     formData.append('file', dataURLtoFile(dataURL, filename) as Blob);
 
-    return await fetch(newUrl, {
+    await fetch(newUrl, {
         method: 'POST',
         body: formData
+    })
+
+    await fetch(`/save_canvas/${gameDrawingId}`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            game_drawing_id: gameDrawingId,
+        })
     })
 }
 

@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
 import { saveImageToGCS } from '@/lib/utils'
+import {setDrawingDone} from "@/lib/data";
 
 export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
     const colorInputRef = useRef<HTMLInputElement>(null)
@@ -53,7 +54,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
             console.log('failed to export canvas');
             return;
         }
-        await saveImageToGCS(dataURL, `${gameDrawingId}.png`);
+        await saveImageToGCS(dataURL, `${gameDrawingId}.png`, gameDrawingId);
     }
 
     return (

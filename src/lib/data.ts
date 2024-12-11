@@ -2,29 +2,52 @@ import { sql } from '@vercel/postgres';
 import {
     GameDrawing,
 } from './data_definitions';
-export async function fetchGameDrawing(user_id:string, game_drawing_id:string) {
+export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
         const data = await sql<GameDrawing>`
-            SELECT game_drawings.*, d_users.name as drawer_name, g_users.name as guesser_name FROM game_drawings
-                                                                                                       LEFT JOIN users d_users on d_users.id = game_drawings.drawer_id
-                                                                                                       LEFT JOIN users g_users on g_users.id = game_drawings.guesser_id
-            WHERE game_drawings.drawer_id = ${user_id}
-              AND game_drawings.id = ${game_drawing_id}
-              AND game_drawings.target_word IS NOT NULL
-              AND game_drawings.image IS NULL`;
-        return data.rows;
+            SELECT game_drawings.* FROM game_drawings
+            WHERE game_drawings.id = ${game_drawing_id}
+              AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})
+              AND game_drawings.drawing_done=false`;
+
+        const res = data.rows;
+        if (res.length === 0) {
+            return null;
+        }
+
+        const gameDrawing = res[0];
+        if (gameDrawing.drawer_id === null) {
+            await sql<GameDrawing>`
+            UPDATE game_drawings SET drawer_id=${user_id}
+            WHERE game_drawings.id = ${game_drawing_id}
+              AND (game_drawings.drawer_id is NULL)
+              AND game_drawings.drawing_done = false`;
+        }
+
+        return gameDrawing;
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch game drawings data.');
     }
 }
 
-export async function addDrawingImage(user_id:string, game_drawing_id:string, image_url:string) {
+export async function setDrawingDone(game_drawing_id:string) {
     try {
         await sql<GameDrawing>`
-            UPDATE game_drawings SET image = ${image_url}
-            WHERE game_drawings.drawer_id = ${user_id}
-              AND game_drawings.id = ${game_drawing_id}
+        UPDATE game_drawings SET drawing_done=true
+        WHERE game_drawings.id = ${game_drawing_id}`;
+
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to update game_drawings record.');
+    }
+}
+
+export async function addDrawer(user_id:string, game_drawing_id:string) {
+    try {
+        await sql<GameDrawing>`
+            UPDATE game_drawings SET drawer_id = ${user_id}
+            WHERE game_drawings.id = ${game_drawing_id}
               AND game_drawings.target_word IS NOT NULL
               AND game_drawings.image IS NULL`;
     } catch (error) {
@@ -33,14 +56,14 @@ export async function addDrawingImage(user_id:string, game_drawing_id:string, im
     }
 }
 
-export async function fetchGames(user_id:string) {
+export async function fetchAvailableDrawings(user_id:string) {
     try {
         const data = await sql<GameDrawing>`
-            SELECT game_drawings.*, ENCODE(game_drawings.image,'base64') as base64_image, d_users.name as drawer_name, g_users.name as guesser_name FROM game_drawings 
-                     LEFT JOIN users d_users on d_users.id = game_drawings.drawer_id
-                     LEFT JOIN users g_users on g_users.id = game_drawings.guesser_id
-            WHERE drawer_id = ${user_id}
-              AND game_drawings.target_word IS NOT NULL`;
+            SELECT game_drawings.* FROM game_drawings 
+                    JOIN game_users on game_users.game_id = game_drawings.game_id
+            WHERE game_users.user_id = ${user_id}
+              AND game_drawings.drawing_done = false
+              AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})`;
         return data.rows;
     } catch (error) {
         console.error('Database Error:', error);
