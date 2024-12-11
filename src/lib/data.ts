@@ -62,7 +62,6 @@ export async function fetchAvailableDrawings(user_id:string) {
             SELECT game_drawings.* FROM game_drawings 
                     JOIN game_users on game_users.game_id = game_drawings.game_id
             WHERE game_users.user_id = ${user_id}
-              AND game_drawings.drawing_done = false
               AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})`;
         return data.rows;
     } catch (error) {

@@ -10,9 +10,10 @@ import {
 import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
 import { saveImageToGCS } from '@/lib/utils'
-import {setDrawingDone} from "@/lib/data";
+import { useRouter } from 'next/navigation'
 
 export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
+    const router = useRouter();
     const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#a855f7')
@@ -55,6 +56,8 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
             return;
         }
         await saveImageToGCS(dataURL, `${gameDrawingId}.png`, gameDrawingId);
+
+        router.push('/');
     }
 
     return (
