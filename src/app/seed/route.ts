@@ -39,10 +39,24 @@ const game_drawings = [
     {
         id: '2257f0df-4cd4-4ce7-a5ef-39a1b990b8fe',
         game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
-        drawing_done: false,
         drawer_id: null,
         guesser_id: null,
         target_word: 'cloud',
+        next_id: null,
+        drawing_done: false,
+        is_first: true,
+        prev_game_drawing_id: null,
+    },
+    {
+        id: '7dc14ffd-dace-424f-ad04-4cda3574b9c2',
+        game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
+        drawer_id: null,
+        guesser_id: null,
+        target_word: null,
+        next_id: null,
+        drawing_done: false,
+        is_first: false,
+        prev_game_drawing_id: '2257f0df-4cd4-4ce7-a5ef-39a1b990b8fe'
     }
 ];
 const client = await db.connect();
@@ -117,15 +131,16 @@ async function seedGames() {
       drawer_id UUID REFERENCES users,
       guesser_id UUID REFERENCES users,
       target_word TEXT,
-      image BYTEA
+      image BYTEA,
+      prev_game_drawing_id UUID REFERENCES game_drawings
     );
   `;
 
     await Promise.all(
         game_drawings.map(async (game_drawing) => {
             return client.sql`
-        INSERT INTO game_drawings (id, game_id, drawer_id, guesser_id, target_word, drawing_done)
-        VALUES (${game_drawing.id}, ${game_drawing.game_id}, ${game_drawing.drawer_id}, ${game_drawing.guesser_id}, ${game_drawing.target_word}, ${game_drawing.drawing_done})
+        INSERT INTO game_drawings (id, game_id, drawer_id, guesser_id, target_word, drawing_done, prev_game_drawing_id)
+        VALUES (${game_drawing.id}, ${game_drawing.game_id}, ${game_drawing.drawer_id}, ${game_drawing.guesser_id}, ${game_drawing.target_word}, ${game_drawing.drawing_done}, ${game_drawing.prev_game_drawing_id})
         ON CONFLICT (id) DO NOTHING;
       `;
         }),
