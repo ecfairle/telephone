@@ -47,17 +47,17 @@ const game_drawings = [
         is_first: true,
         prev_game_drawing_id: null,
     },
-    {
-        id: '7dc14ffd-dace-424f-ad04-4cda3574b9c2',
-        game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
-        drawer_id: null,
-        guesser_id: null,
-        target_word: null,
-        next_id: null,
-        drawing_done: false,
-        is_first: false,
-        prev_game_drawing_id: '2257f0df-4cd4-4ce7-a5ef-39a1b990b8fe'
-    }
+    // {
+    //     id: '7dc14ffd-dace-424f-ad04-4cda3574b9c2',
+    //     game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
+    //     drawer_id: null,
+    //     guesser_id: null,
+    //     target_word: null,
+    //     next_id: null,
+    //     drawing_done: false,
+    //     is_first: false,
+    //     prev_game_drawing_id: '2257f0df-4cd4-4ce7-a5ef-39a1b990b8fe'
+    // }
 ];
 const client = await db.connect();
 

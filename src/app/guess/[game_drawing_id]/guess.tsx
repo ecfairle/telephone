@@ -27,7 +27,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
     return (
             <div>
                 <form method="post" onSubmit={handleSubmit}>
-                    <label>Guess: <input name="guess"/></label>
+                    <label>Guess: <input name="guess" autoComplete="off"/></label>
                     <button type="submit">Submit</button>
                 </form>
                 <img alt='drawing' src={`${imageUrl}`}/>

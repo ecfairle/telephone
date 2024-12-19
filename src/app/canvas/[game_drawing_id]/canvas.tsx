@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type ChangeEvent } from 'react'
-import { OpenableComponent } from '@/lib/utils'
+import { OpenableComponent } from '@/components/modal'
 import {
     ReactSketchCanvas,
     type ReactSketchCanvasRef
@@ -9,7 +9,7 @@ import {
 
 import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
-import { saveImageToGCS } from '@/lib/utils'
+import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 
 export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
@@ -55,9 +55,9 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
             console.log('failed to export canvas');
             return;
         }
-        await saveImageToGCS(dataURL, `${gameDrawingId}.png`, gameDrawingId);
+        await uploadImage(dataURL, `${gameDrawingId}.png`, gameDrawingId);
 
-        router.push('/');
+        router.push(`/`);
     }
 
     return (

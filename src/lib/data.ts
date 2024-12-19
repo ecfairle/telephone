@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres';
+import { v4 } from "uuid";
 import {
     GameDrawing,
 } from './data_definitions';
@@ -62,9 +63,18 @@ export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
 
 export async function setDrawingDone(game_drawing_id:string) {
     try {
-        await sql<GameDrawing>`
+        const data = await sql<GameDrawing>`
         UPDATE game_drawings SET drawing_done=true
-        WHERE game_drawings.id = ${game_drawing_id}`;
+        WHERE game_drawings.id = ${game_drawing_id}
+        RETURNING *`;
+        const drawing = data.rows.length > 0 ? data.rows[0] : null;
+        if (!drawing) {
+            return null;
+        }
+
+        await sql<GameDrawing>`
+        INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done)
+        VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false)`
 
     } catch (error) {
         console.error('Database Error:', error);
@@ -74,7 +84,7 @@ export async function setDrawingDone(game_drawing_id:string) {
 
 export async function setGuess(game_drawing_id:string, guess: string) {
     try {
-        await sql<GameDrawing>`
+        const data = await sql<GameDrawing>`
         UPDATE game_drawings SET target_word=${guess}
         WHERE game_drawings.id = ${game_drawing_id}`;
 
