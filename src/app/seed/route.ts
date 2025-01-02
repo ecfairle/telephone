@@ -44,6 +44,10 @@ const games = [
         id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
         original_word: 'cloud',
     },
+    {
+        id: 'fa02b93b-1580-4ee0-9212-9f6221ffa252',
+        original_word: 'cat'
+    }
 ];
 
 const game_users = [
@@ -63,6 +67,19 @@ const game_users = [
         user_id: '0fd40421-dc18-46ca-b19a-68f853e8ddc4',
         game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
     },
+    // game 2
+    {
+        user_id: '410544b2-4001-4271-9855-fec4b6a6442a',
+        game_id: 'fa02b93b-1580-4ee0-9212-9f6221ffa252',
+    },
+    {
+        user_id: '41051234-4001-4271-9855-fec4b6a6442b',
+        game_id: 'fa02b93b-1580-4ee0-9212-9f6221ffa252',
+    },
+    {
+        user_id: '9845a2a1-a862-448f-99db-a56881ecadc3',
+        game_id: 'fa02b93b-1580-4ee0-9212-9f6221ffa252',
+    },
 ];
 
 const game_drawings = [
@@ -72,6 +89,17 @@ const game_drawings = [
         drawer_id: null,
         guesser_id: null,
         target_word: 'cloud',
+        next_id: null,
+        drawing_done: false,
+        is_first: true,
+        prev_game_drawing_id: null,
+    },
+    {
+        id: '3da0443e-54c6-4036-a945-e8e4be03b38f',
+        game_id: 'fa02b93b-1580-4ee0-9212-9f6221ffa252',
+        drawer_id: null,
+        guesser_id: null,
+        target_word: 'cat',
         next_id: null,
         drawing_done: false,
         is_first: true,
