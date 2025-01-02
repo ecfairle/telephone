@@ -3,14 +3,38 @@ import { db } from '@vercel/postgres';
 const users = [
     {
         id: '410544b2-4001-4271-9855-fec4b6a6442a',
-        name: 'User',
+        name: 'Eugene',
         email: 'user@nextmail.com',
         password: '123456',
     },
     {
         id: '41051234-4001-4271-9855-fec4b6a6442b',
-        name: 'User2',
+        name: 'Lucas',
         email: 'user2@nextmail.com',
+        password: '123456',
+    },
+    {
+        id: '9845a2a1-a862-448f-99db-a56881ecadc3',
+        name: 'Josh',
+        email: 'user3@nextmail.com',
+        password: '123456',
+    },
+    {
+        id: '0fd40421-dc18-46ca-b19a-68f853e8ddc4',
+        name: 'Kent',
+        email: 'user4@nextmail.com',
+        password: '123456',
+    },
+    {
+        id: '9f040ed8-f0d4-4520-a0c2-537d539b54c7',
+        name: 'Aaron',
+        email: 'user5@nextmail.com',
+        password: '123456',
+    },
+    {
+        id: 'ed57a015-9893-4818-ac2d-8629c581617d',
+        name: 'Andrew',
+        email: 'user6@nextmail.com',
         password: '123456',
     },
 ];
@@ -24,13 +48,19 @@ const games = [
 
 const game_users = [
     {
-        id: '816aa791-174b-4ae4-b455-45c558f2ae95',
         user_id: '410544b2-4001-4271-9855-fec4b6a6442a',
         game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
     },
     {
-        id: '85511cb3-0a24-4e0f-9935-84d56d7ce5c0',
         user_id: '41051234-4001-4271-9855-fec4b6a6442b',
+        game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
+    },
+    {
+        user_id: '9845a2a1-a862-448f-99db-a56881ecadc3',
+        game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
+    },
+    {
+        user_id: '0fd40421-dc18-46ca-b19a-68f853e8ddc4',
         game_id: 'f9eda13b-e0da-4407-9c0e-37e51b76672f',
     },
 ];
@@ -107,18 +137,17 @@ async function seedGames() {
 
     await client.sql`
     CREATE TABLE IF NOT EXISTS game_users (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
       game_id UUID NOT NULL REFERENCES games,
-      user_id UUID NOT NULL REFERENCES users
+      user_id UUID NOT NULL REFERENCES users,
+      UNIQUE (game_id, user_id)
     );
   `;
 
     await Promise.all(
         game_users.map(async (game_user) => {
             return client.sql`
-        INSERT INTO game_users (id, game_id, user_id)
-        VALUES (${game_user.id}, ${game_user.game_id}, ${game_user.user_id})
-        ON CONFLICT (id) DO NOTHING;
+        INSERT INTO game_users (game_id, user_id)
+        VALUES (${game_user.game_id}, ${game_user.user_id});
       `;
         }),
     );
@@ -152,7 +181,7 @@ async function seedGames() {
 export async function GET() {
     try {
       await client.sql`BEGIN`;
-      await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; `;
+      await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; DROP TABLE users; `;
       await seedUsers();
       await seedGames();
       await client.sql`COMMIT`;

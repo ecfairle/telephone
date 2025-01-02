@@ -107,11 +107,36 @@ export async function addDrawer(user_id:string, game_drawing_id:string) {
     }
 }
 
+export async function fetchGames(user_id:string) {
+    try {
+        const data = await sql`
+            SELECT g2.*, users.name FROM game_users g
+                    JOIN game_users g2 on (g2.game_id = g.game_id AND g2.user_id != g.user_id)
+					JOIN users on users.id = g2.user_id
+            WHERE g.user_id = ${user_id}`;
+
+        const result = data.rows.reduce(
+            (prev, cur) => {
+                if (cur.game_id in prev) {
+                    return {...prev, [cur.game_id]: [...prev[cur.game_id], {'name': cur.name}]};
+                } else {
+                    return {...prev, [cur.game_id]: [{'name': cur.name}]}
+                }
+            }, {}
+        )
+        return result;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
 export async function fetchAvailableDrawings(user_id:string) {
     try {
         const data = await sql<GameDrawing>`
-            SELECT game_drawings.* FROM game_drawings 
+            SELECT game_drawings.*, users.name FROM game_drawings 
                     JOIN game_users on game_users.game_id = game_drawings.game_id
+                    JOIN users on users.id = game_users.user_id
             WHERE game_users.user_id = ${user_id}
               AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})`;
         return data.rows;

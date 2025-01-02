@@ -1,6 +1,6 @@
 import {GetSignedUrlConfig, Storage} from "@google-cloud/storage";
 
-function gameDrawingSignedUrlLocation(gameDrawingId: string) {
+function imagePath(gameDrawingId: string) {
     return `test/${gameDrawingId}.png`;
 }
 
@@ -19,7 +19,7 @@ export async function getSignedUrl(
     });
 
     const bucket = storage.bucket(process.env.BUCKET_NAME);
-    const file = bucket.file(gameDrawingSignedUrlLocation(gameDrawingId));
+    const file = bucket.file(imagePath(gameDrawingId));
     const options:GetSignedUrlConfig = {
         expires: Date.now() + 25 * 60 * 1000, // 25 minutes,
         action: 'read',

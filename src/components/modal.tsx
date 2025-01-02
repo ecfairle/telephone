@@ -29,5 +29,5 @@ function useOutsideAlerter(ref: MutableRefObject<null|HTMLDivElement>, setOpen: 
 export function OpenableComponent({children, setOpen} : {children: React.ReactNode, setOpen: (open: boolean) => void}) {
     const wrapperRef:MutableRefObject<null> = useRef(null);
     useOutsideAlerter(wrapperRef, setOpen);
-    return <div ref={wrapperRef}><div>{children}</div></div>;
+    return <div className={"relative transform transition-all"} ref={wrapperRef}><div>{children}</div></div>;
 }

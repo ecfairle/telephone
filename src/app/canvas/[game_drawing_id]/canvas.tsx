@@ -16,7 +16,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
     const router = useRouter();
     const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
-    const [strokeColor, setStrokeColor] = useState('#a855f7')
+    const [strokeColor, setStrokeColor] = useState('#4fab50')
     const [strokeWidth, setStrokeWidth] = useState(4)
     const [eraseMode, setEraseMode] = useState(false)
     const [word] = useState(secretWord);
@@ -62,12 +62,12 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
 
     return (
         <section className='py-24'>
-            <div className='container'>
-                <h1 className='text-3xl font-bold justify-center'>{word}</h1>
+            <div className='container mx-auto max-w-fit'>
+                <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
-                        width='100%'
-                        height='430px'
+                        width='2000px'
+                        height='500px'
                         ref={canvasRef}
                         strokeColor={strokeColor}
                         strokeWidth={strokeWidth}
@@ -96,14 +96,15 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                         <Button
                             size='icon'
                             type='button'
-                            onClick={() => setDisplaySizeSelector(true)}
+                            onMouseDown={() => setDisplaySizeSelector(true)}
                         >
 
-                            <Circle size={strokeWidth * 10}/>
+                            <Circle size={strokeWidth}/>
 
                         </Button>
+                        {displaySizeSelector?
                         <OpenableComponent setOpen={setDisplaySizeSelector}>
-                        <dialog open={displaySizeSelector}>
+                            <dialog open={displaySizeSelector}>
                                 <Button
                                     size='icon'
                                     type='button'
@@ -137,70 +138,69 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                 >
                                     <Circle size={12}/>
                                 </Button>
-                        </dialog>
-                        </OpenableComponent>
+                            </dialog>
+                        </OpenableComponent> : null}
+                        {/* Drawing mode */}
+                        <div className='flex flex-col gap-3 pt-6'>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                disabled={!eraseMode}
+                                onClick={handlePenClick}
+                            >
+                                <Pen size={16}/>
+                            </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                disabled={eraseMode}
+                                onClick={handleEraserClick}
+                            >
+                                <Eraser size={16}/>
+                            </Button>
+                        </div>
 
-                            {/* Drawing mode */}
-                            <div className='flex flex-col gap-3 pt-6'>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    disabled={!eraseMode}
-                                    onClick={handlePenClick}
-                                >
-                                    <Pen size={16}/>
-                                </Button>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    disabled={eraseMode}
-                                    onClick={handleEraserClick}
-                                >
-                                    <Eraser size={16}/>
-                                </Button>
-                            </div>
+                        {/* Actions */}
+                        <div className='flex flex-col gap-3 pt-6'>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleUndoClick}
+                            >
+                                <Undo size={16}/>
+                            </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleRedoClick}
+                            >
+                                <Redo size={16}/>
+                            </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleClearClick}
+                            >
+                                <RotateCcw size={16}/>
+                            </Button>
 
-                            {/* Actions */}
-                            <div className='flex flex-col gap-3 pt-6'>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleUndoClick}
-                                >
-                                    <Undo size={16}/>
-                                </Button>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleRedoClick}
-                                >
-                                    <Redo size={16}/>
-                                </Button>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleClearClick}
-                                >
-                                    <RotateCcw size={16}/>
-                                </Button>
-
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleSave}
-                                >
-                                    <Save size={16}/>
-                                </Button>
-                            </div>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleSave}
+                            >
+                                <Save size={16}/>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
-            )
-            }
+    )
+}

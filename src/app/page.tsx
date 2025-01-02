@@ -1,16 +1,19 @@
-import { fetchAvailableDrawings } from '@/lib/data';
+import {fetchAvailableDrawings, fetchGames} from '@/lib/data';
 import Link from 'next/link';
 import {getSignedUrl} from "@/lib/gcs";
 
 export default async function Home() {
   // const params = await searchParams;
   const userId = '410544b2-4001-4271-9855-fec4b6a6442a';
+  const games = await fetchGames(userId);
   const drawings = await fetchAvailableDrawings(userId);
   console.log(drawings)
 
-
+  console.log(games);
   const pastDrawings = drawings.filter(drawing => drawing.drawer_id !== null);
-  const curDrawings = drawings.filter(drawing => (drawing.drawer_id === null || drawing.drawer_id === userId) && drawing.drawing_done === false && drawing.target_word !== null);
+  const curDrawings = drawings.filter(drawing =>
+      (drawing.drawer_id === null || drawing.drawer_id === userId) &&
+      drawing.drawing_done === false && drawing.target_word !== null);
   const curGuessable = drawings.filter(drawing => drawing.target_word === null);
   return (<div className={"container"}>
     <p> {curDrawings.length > 0 ?
