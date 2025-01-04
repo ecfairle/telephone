@@ -12,6 +12,7 @@ export async function reserveGameDrawing(game_drawing_id:string, user_id:string)
               AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})
               AND game_drawings.drawing_done=false`;
 
+        // TODO: prevent users who have already played from reserving
         const res = data.rows;
         if (res.length === 0) {
             return null;
@@ -134,11 +135,29 @@ export async function fetchGames(user_id:string) {
 export async function fetchAvailableDrawings(user_id:string) {
     try {
         const data = await sql<GameDrawing>`
-            SELECT game_drawings.*, users.name FROM game_drawings 
+            SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name FROM game_drawings 
                     JOIN game_users on game_users.game_id = game_drawings.game_id
                     JOIN users on users.id = game_users.user_id
-            WHERE game_users.user_id = ${user_id}
-              AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})`;
+                    LEFT JOIN users guesser on guesser.id = game_drawings.guesser_id
+                    LEFT JOIN users drawer on drawer.id = game_drawings.drawer_id
+            WHERE game_users.user_id = ${user_id}`;
+        // const drawings:GameDrawing[] = [];
+        // const drawingsByPrevId = data.rows.reduce((prev:{[key:string]:GameDrawing}, cur:GameDrawing) => ({...prev, [cur.prev_game_drawing_id]: cur}), {})
+        // for (const drawing of data.rows) {
+        //     if (drawing.prev_game_drawing_id == null) {
+        //         drawings.push(drawing);
+        //         break;
+        //     }
+        // }
+        // let drawingId = drawings.at(0)?.id;
+        // while (drawingId) {
+        //     if (drawingId in drawingsByPrevId) {
+        //         drawings.push(drawingsByPrevId[drawingId])
+        //         drawingId = drawingsByPrevId[drawingId].id;
+        //     } else {
+        //         break;
+        //     }
+        // }
         return data.rows;
     } catch (error) {
         console.error('Database Error:', error);
