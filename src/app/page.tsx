@@ -105,13 +105,13 @@ async function ListGame ({drawings, userId} : {drawings: GameDrawing[], userId: 
   console.log(alreadyFinished, isDrawing, isGuessing, myTurn)
   return (<div>
     {alreadyFinished ?
-            <div>
+            <div className={"flex w-1/2"}>
               {
                 turns.map(async (turn, idx) => {
                   return turn.isDraw? (
-                      <li key={idx}>{`${turn.isMe ? "You" : turn.drawer_name} drew `}<img className={'size-1/5'} alt='past drawing'
+                      <div className={"flex-1"} key={idx}>{`${turn.isMe ? "You" : turn.drawer_name} drew `}<img className={''} alt='past drawing'
                                                                                           src={`${await getSignedUrl(turn.id)}`}/>
-                      </li>) : (<li key={idx}>{`${turn.isMe ? "You" : turn.guesser_name} guessed "${turn.target_word}"`}</li>)
+                      </div>) : (<div className={"flex-1"}  key={idx}>{`${turn.isMe ? "You" : turn.guesser_name} guessed "${turn.target_word}"`}</div>)
                 })}
             </div> :
             isDrawing ?
