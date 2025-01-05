@@ -11,7 +11,7 @@ export default async function Page({
                                    }: {params: Promise<{ game_drawing_id: string }> }) {
     const gameDrawingId = (await params).game_drawing_id;
     console.log(gameDrawingId);
-    const userId = '410544b2-4001-4271-9855-fec4b6a6442a';
+    const userId = '0fd40421-dc18-46ca-b19a-68f853e8ddc4';
     const drawing = await reserveGameDrawing(gameDrawingId, userId);
     return (
         <main>
