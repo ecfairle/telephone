@@ -5,7 +5,7 @@ import {GameDrawing} from "@/lib/data_definitions";
 
 export default async function Home() {
   // const params = await searchParams;
-  const userId = '410544b2-4001-4271-9855-fec4b6a6442a';
+  const userId = '41051234-4001-4271-9855-fec4b6a6442b';
   const games = await fetchGames(userId);
   const drawings = await fetchAvailableDrawings(userId);
   const gameDrawings = drawings.reduce((prev: {[key: string]: GameDrawing[]}, cur) => {
@@ -37,6 +37,25 @@ async function ListGame ({drawings, userId} : {drawings: GameDrawing[], userId: 
   let someoneElse = null;
   let someoneElseGuessing = false;
   console.log(drawings, userId)
+  const turns = [];
+  for (const drawing of drawings) {
+    if (drawing.guesser_id !== null && drawing.target_word !== null) {
+      turns.push({
+        ...drawing,
+        isDraw: false,
+        isMe: drawing.guesser_id === userId,
+        userId: drawing.guesser_id
+      })
+    }
+    if (drawing.drawer_id !== null && drawing.drawing_done) {
+      turns.push({
+        ...drawing,
+        isDraw: true,
+        isMe: drawing.drawer_id === userId,
+        userId: drawing.drawer_id
+      })
+    }
+  }
   for (const drawing of drawings) {
     if (drawing.guesser_id === userId) {
       isGuessing = true;
@@ -63,8 +82,7 @@ async function ListGame ({drawings, userId} : {drawings: GameDrawing[], userId: 
   }
   if (!isDrawing && !isGuessing) {
     for (const drawing of drawings) {
-      // drawing available
-      if (!drawing.drawing_done) {
+      if (!drawing.drawing_done && drawing.target_word !== null) {
         if (drawing.drawer_id === null) {
           isDrawing = true;
         } else {
@@ -72,7 +90,6 @@ async function ListGame ({drawings, userId} : {drawings: GameDrawing[], userId: 
         }
         break;
       }
-      // first turn, ignore if target_word
       if (drawing.target_word === null) {
         if (drawing.guesser_id === null) {
           isGuessing = true;
@@ -85,35 +102,35 @@ async function ListGame ({drawings, userId} : {drawings: GameDrawing[], userId: 
       }
     }
   }
-  const pastDrawings = drawings.filter(drawing => drawing.drawer_id === userId && drawing.drawing_done);
-  const curDrawings = drawings.filter(drawing =>
-      (drawing.drawer_id === null || drawing.drawer_id === userId) &&
-      drawing.drawing_done === false && drawing.target_word !== null);
-  const curGuessable = drawings.filter(drawing => drawing.target_word === null);
   console.log(alreadyFinished, isDrawing, isGuessing, myTurn)
   return (<div>
-      <p> {alreadyFinished ? "You already played a round." :
-          isDrawing ?
+    {alreadyFinished ?
+            <div>
+              {
+                turns.map(async (turn, idx) => {
+                  return turn.isDraw? (
+                      <li key={idx}>{`${turn.isMe ? "You" : turn.drawer_name} drew `}<img className={'size-1/5'} alt='past drawing'
+                                                                                          src={`${await getSignedUrl(turn.id)}`}/>
+                      </li>) : (<li key={idx}>{`${turn.isMe ? "You" : turn.guesser_name} guessed "${turn.target_word}"`}</li>)
+                })}
+            </div> :
+            isDrawing ?
               myTurn ?
                 <Link
                     href={{
-                      pathname: `/canvas/${curDrawings[0].id}`}}
+                      pathname: `/canvas/${drawings.at(-1)?.id}`}}
                 > {"FINISH DRAWING"}</Link> :
                   <Link
                       href={{
-                        pathname: `/canvas/${curDrawings[0].id}`}}
+                        pathname: `/canvas/${drawings.at(-1)?.id}`}}
                   > {"DRAW a drawing"}</Link> :
               isGuessing ?
                   myTurn ?
-                      <Link href={{pathname: `/guess/${curGuessable[0].id}`}}><p>{`FINISH GUESSING`}</p></Link> :
-                      <Link href={{pathname: `/guess/${curGuessable[0].id}`}}><p>{`TRY GUESSING`}</p></Link> :
+                      <Link href={{pathname: `/guess/${drawings.at(-1)?.id}`}}><p>{`FINISH GUESSING`}</p></Link> :
+                      <Link href={{pathname: `/guess/${drawings.at(-1)?.id}`}}><p>{`TRY GUESSING`}</p></Link> :
                   someoneElse ? `${someoneElse} is ${someoneElseGuessing? 'guessing' : 'drawing'}`: 'invalid state.'
 
-      }</p>
-  {/*{curGuessable.length > 0 ?*/}
-  {/*    <Link href={{pathname: `/guess/${curGuessable[0].id}`}}><p>{`Guess drawing for game ${curGuessable[0].game_id}`}</p></Link> : null}*/}
-  {/*{pastDrawings.length > 0 ?*/}
-  {/*    <div><p>{`You drew \"${pastDrawings[pastDrawings.length - 1].target_word}\"`}</p><img alt='past drawing' src={`${await getSignedUrl(pastDrawings[pastDrawings.length - 1].id)}`}/></div> : "no old games"}*/}
+      }
       </div>
     )
 }

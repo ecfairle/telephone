@@ -14,7 +14,7 @@ export default async function Page({
 
     const gameDrawingId = (await params).game_drawing_id;
     console.log(gameDrawingId);
-    const userId = '410544b2-4001-4271-9855-fec4b6a6442a';
+    const userId = '41051234-4001-4271-9855-fec4b6a6442b';
     const drawing = await reserveGameGuess(gameDrawingId, userId);
 
     return (
