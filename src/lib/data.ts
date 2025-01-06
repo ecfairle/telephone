@@ -12,13 +12,24 @@ export async function reserveGameDrawing(game_drawing_id:string, user_id:string)
               AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})
               AND game_drawings.drawing_done=false`;
 
-        // TODO: prevent users who have already played from reserving
         const res = data.rows;
         if (res.length === 0) {
             return null;
         }
 
         const gameDrawing = res[0];
+        const allDrawings = await sql<GameDrawing>`
+            SELECT * from game_drawings where game_id=${gameDrawing.game_id}`
+
+        const drawersGuessers = allDrawings.rows.reduce((acc: Set<string>, curr: GameDrawing) => {
+            acc.add(curr.guesser_id);
+            acc.add(curr.drawer_id);
+            return acc;
+        }, new Set());
+
+        if (user_id in drawersGuessers && gameDrawing.drawer_id === null) {
+            return null;
+        }
         if (gameDrawing.drawer_id === null) {
             await sql<GameDrawing>`
             UPDATE game_drawings SET drawer_id=${user_id}
@@ -49,6 +60,18 @@ export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
         }
 
         const gameDrawing = res[0];
+        const allDrawings = await sql<GameDrawing>`
+            SELECT * from game_drawings where game_id=${gameDrawing.game_id}`
+
+        const drawersGuessers = allDrawings.rows.reduce((acc: Set<string>, curr: GameDrawing) => {
+            acc.add(curr.guesser_id);
+            acc.add(curr.drawer_id);
+            return acc;
+        }, new Set());
+        console.log(drawersGuessers, user_id, user_id in drawersGuessers)
+        if (drawersGuessers.has(user_id) && gameDrawing.guesser_id === null) {
+            return null;
+        }
         if (gameDrawing.guesser_id === null) {
             await sql<GameDrawing>`
             UPDATE game_drawings SET guesser_id=${user_id}

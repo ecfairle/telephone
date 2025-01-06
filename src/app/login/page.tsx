@@ -14,7 +14,6 @@ export default function LoginPageWrapper() {
 function LoginPage() {
 
     const { data: session } = useSession();
-
     useEffect(() => {
         if (session) {
             window.location.pathname = "/";

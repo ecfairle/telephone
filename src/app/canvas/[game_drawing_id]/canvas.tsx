@@ -11,9 +11,13 @@ import { Button } from '@/components/button'
 import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+import {useSession} from "next-auth/react";
+
 
 export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
     const router = useRouter();
+    // const session = useSession();
+    // console.log("EMAIL" + session.data?.user?.email)
     const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#4fab50')
