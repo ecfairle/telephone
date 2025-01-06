@@ -5,7 +5,6 @@ const users = [
         id: '410544b2-4001-4271-9855-fec4b6a6442a',
         name: 'Eugene',
         email: 'user@nextmail.com',
-        password: '123456',
     },
     {
         id: '41051234-4001-4271-9855-fec4b6a6442b',
@@ -121,21 +120,61 @@ const client = await db.connect();
 
 async function seedUsers() {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+
   await client.sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
-    );
-  `;
+  CREATE TABLE verification_token
+(
+  identifier TEXT NOT NULL,
+  expires TIMESTAMPTZ NOT NULL,
+  token TEXT NOT NULL,
+ 
+  PRIMARY KEY (identifier, token)
+);
+ 
+CREATE TABLE accounts
+(
+  id SERIAL,
+  "userId" UUID NOT NULL,
+  type VARCHAR(255) NOT NULL,
+  provider VARCHAR(255) NOT NULL,
+  "providerAccountId" VARCHAR(255) NOT NULL,
+  refresh_token TEXT,
+  access_token TEXT,
+  expires_at BIGINT,
+  id_token TEXT,
+  scope TEXT,
+  session_state TEXT,
+  token_type TEXT,
+ 
+  PRIMARY KEY (id)
+);
+ 
+CREATE TABLE sessions
+(
+  id SERIAL,
+  "userId" UUID NOT NULL,
+  expires TIMESTAMPTZ NOT NULL,
+  "sessionToken" VARCHAR(255) NOT NULL,
+ 
+  PRIMARY KEY (id)
+);
+ 
+CREATE TABLE users
+(
+  id UUID DEFAULT uuid_generate_v4() NOT NULL,
+  name VARCHAR(255),
+  email VARCHAR(255),
+  "emailVerified" TIMESTAMPTZ,
+  image TEXT,
+ 
+  PRIMARY KEY (id)
+);`
 
   const insertedUsers = await Promise.all(
     users.map(async (user) => {
-      const hashedPassword = await bcrypt.hash(user.password, 10);
       return client.sql`
-        INSERT INTO users (id, name, email, password)
-        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword})
+        INSERT INTO users (id, name, email)
+        VALUES (${user.id}, ${user.name}, ${user.email})
         ON CONFLICT (id) DO NOTHING;
       `;
     }),
@@ -209,6 +248,7 @@ async function seedGames() {
 export async function GET() {
     try {
       await client.sql`BEGIN`;
+      await client.sql`DROP table accounts; DROP table sessions; DROP table verification_token; `
       await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; DROP TABLE users; `;
       await seedUsers();
       await seedGames();
