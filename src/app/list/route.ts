@@ -1,5 +1,4 @@
 import {db, sql} from "@vercel/postgres";
-import {GameDrawing} from "@/lib/data_definitions";
 
 const client = await db.connect();
 

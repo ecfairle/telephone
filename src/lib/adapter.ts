@@ -23,14 +23,6 @@ import type {
 } from "@auth/core/adapters"
 import type { Pool } from "pg"
 
-export function mapExpiresAt(account: any): any {
-    const expires_at: number = parseInt(account.expires_at)
-    return {
-        ...account,
-        expires_at,
-    }
-}
-
 export default function PostgresAdapter(client: Pool): Adapter {
     return {
         async createVerificationToken(
@@ -173,7 +165,11 @@ export default function PostgresAdapter(client: Pool): Adapter {
             ]
 
             const result = await client.query(sql, params)
-            return mapExpiresAt(result.rows[0])
+            const row = result.rows[0];
+            return {
+                ...row,
+                expires_at: parseInt(row.expires_at),
+            };
         },
         async createSession({ sessionToken, userId, expires }) {
             if (userId === undefined) {

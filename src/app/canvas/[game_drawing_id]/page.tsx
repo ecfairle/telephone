@@ -2,7 +2,7 @@ import Canvas from './canvas';
 import {reserveGameDrawing} from '@/lib/data';
 import { Metadata } from 'next';
 import {getServerSession} from 'next-auth'
-import {authOptions} from '@/app/api/auth/[...nextauth]/route'
+import {authOptions} from '@/app/api/auth/[...nextauth]/auth'
 import SessionProvider from "@/providers/SessionProvider";
 import {redirect} from 'next/navigation';
 
@@ -19,7 +19,7 @@ export default async function Page({
     if (!session) {
         return redirect('/login')
     }
-    console.log('sdui----' + session?.user?.id)
+    console.log('sdui----' + session?.user?.userId)
     const userId = '0fd40421-dc18-46ca-b19a-68f853e8ddc4';
     const drawing = await reserveGameDrawing(gameDrawingId, userId);
     return (

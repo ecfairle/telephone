@@ -108,7 +108,7 @@ export async function setDrawingDone(game_drawing_id:string) {
 
 export async function setGuess(game_drawing_id:string, guess: string) {
     try {
-        const data = await sql<GameDrawing>`
+        await sql<GameDrawing>`
         UPDATE game_drawings SET target_word=${guess}
         WHERE game_drawings.id = ${game_drawing_id}`;
 

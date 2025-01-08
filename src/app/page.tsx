@@ -2,9 +2,8 @@ import {fetchAvailableDrawings, fetchGames} from '@/lib/data';
 import Link from 'next/link';
 import {getSignedUrl} from "@/lib/gcs";
 import {GameDrawing} from "@/lib/data_definitions";
-import {getSession} from "next-auth/react";
 
-export default async function Home(req, res) {
+export default async function Home() {
   // const params = await searchParams;
   const userId = '0fd40421-dc18-46ca-b19a-68f853e8ddc4';
   const games = await fetchGames(userId);

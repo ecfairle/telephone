@@ -20,7 +20,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
     if (!session) {
         router.push('/login');
     }
-    console.log('user id' + session?.data?.user?.id)
+    console.log('user id' + session?.data?.user?.userId)
     const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#4fab50')

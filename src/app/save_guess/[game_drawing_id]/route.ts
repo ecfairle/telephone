@@ -1,4 +1,4 @@
-import {setDrawingDone, setGuess} from '@/lib/data';
+import {setGuess} from '@/lib/data';
 import {NextRequest} from "next/server";
 
 export async function POST(request: NextRequest) {
