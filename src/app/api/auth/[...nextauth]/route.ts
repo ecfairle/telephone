@@ -1,10 +1,11 @@
-import NextAuth from "next-auth"
+import NextAuth, {NextAuthOptions} from "next-auth"
 import DiscordProvider from "next-auth/providers/discord"
 import PostgresAdapter from "@auth/pg-adapter"
 import { createPool } from "@vercel/postgres"
 
 const pool = createPool();
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
+    secret: process.env.NEXT_AUTH_SECRET as string,
     adapter: PostgresAdapter(pool),
     providers: [
         DiscordProvider({
@@ -12,6 +13,24 @@ const handler = NextAuth({
             clientSecret: process.env.DISCORD_SECRET as string
         })
     ],
-})
+    callbacks: {
+        session: async ({ session, token }) => {
+            if (session?.user) {
+                session.user.id = token.uid;
+            }
+            return session;
+        },
+        jwt: async ({ user, token }) => {
+            if (user) {
+                token.uid = user.id;
+            }
+            return token;
+        },
+    },
+    session: {
+        strategy: 'jwt',
+    },
+}
+const handler = NextAuth(authOptions);
 
 export {handler as GET, handler as POST}

@@ -16,8 +16,11 @@ import {useSession} from "next-auth/react";
 
 export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
     const router = useRouter();
-    // const session = useSession();
-    // console.log("EMAIL" + session.data?.user?.email)
+    const session = useSession();
+    if (!session) {
+        router.push('/login');
+    }
+    console.log('user id' + session?.data?.user?.id)
     const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#4fab50')
