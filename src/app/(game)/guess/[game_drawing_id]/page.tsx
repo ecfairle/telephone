@@ -1,7 +1,10 @@
-import { reserveGameGuess } from '@/lib/data';
+import {fetchGames, reserveGameGuess} from '@/lib/data';
 import { Metadata } from 'next';
 import {getSignedUrl} from "@/lib/gcs";
-import Guess from "@/app/guess/[game_drawing_id]/guess";
+import Guess from "./guess";
+import {getServerSession} from "next-auth";
+import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
+import {redirect} from "next/navigation";
 
 export const metadata: Metadata = {
     title: 'Guess',
@@ -14,7 +17,12 @@ export default async function Page({
 
     const gameDrawingId = (await params).game_drawing_id;
     console.log(gameDrawingId);
-    const userId = '0fd40421-dc18-46ca-b19a-68f853e8ddc4';
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.userId) {
+        return redirect('/login')
+    }
+    console.log('sdui----' + session?.user?.userId)
+    const userId = session?.user?.userId;
     const drawing = await reserveGameGuess(gameDrawingId, userId);
 
     return (

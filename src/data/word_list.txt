@@ -1,0 +1,72 @@
+# https://www.artteacherdiaries.com/uploads/1/2/1/5/12157652/pictionary_words.pdf
+# cat src\data\word_list.txt | ForEach-Object { $_.ToLower() } | Out-File -FilePath "src\data\word_list2.txt"
+airplane
+acorn
+4th of July
+ant
+alligator
+alien
+bath tub
+baby
+apple
+bicycle
+bear
+beach
+bridge
+bone
+birthday cake
+cactus
+butterfly
+bumblebee
+chair
+car
+camera
+chocolate
+cherry
+cheeseburger
+cupcake
+computer
+coffee
+donut
+dinosaur
+diamond
+duck
+dragon
+door
+elephant
+earth
+ear
+eyeball
+envelope
+elf
+fire truck
+fire
+feather
+flamingo
+flag
+fish
+fork
+football
+foot
+ghost
+french
+fries
+fox
+glue
+giraffe
+gift
+grapes
+goose
+gnome
+hot dog
+horse
+hat
+jacket
+ice cream cone
+house
+kangaroo
+jupiter
+jellyfish
+knight
+kitten
+key

@@ -16,11 +16,11 @@ export default async function Page({
     const gameDrawingId = (await params).game_drawing_id;
     console.log(gameDrawingId);
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.userId) {
         return redirect('/login')
     }
     console.log('sdui----' + session?.user?.userId)
-    const userId = '0fd40421-dc18-46ca-b19a-68f853e8ddc4';
+    const userId = session?.user?.userId;
     const drawing = await reserveGameDrawing(gameDrawingId, userId);
     return (
         <SessionProvider session={session}>

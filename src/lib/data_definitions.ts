@@ -17,7 +17,8 @@ export type GameDrawing = {
     guesser_name: string,
     drawer_name: string,
     drawing_done: boolean,
-    prev_game_drawing_id: string
+    prev_game_drawing_id: string,
+    signed_url: string
 }
 
 // CREATE TABLE IF NOT EXISTS games (

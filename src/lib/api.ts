@@ -1,5 +1,18 @@
+export async function joinGame(userId:string, gameId:string) {
+    const res = await fetch(`/join`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            game_id: gameId,
+            user_id: userId
+        })
+    })
+}
 export async function uploadImage(dataURL:string, filename:string, gameDrawingId:string) {
-    const res = await fetch(`/upload_url`,{
+    const res = await fetch(`/upload_url`, {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
@@ -45,4 +58,30 @@ function dataURLtoFile(dataurl:string, filename:string) {
         u8arr[i] = bstr.charCodeAt(i);
     }
     return new File([u8arr], filename, {type:mime});
+}
+
+export async function startNewGameFromOld(old_game_id:string) {
+    await fetch(`/duplicate_game`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            old_game_id
+        })
+    })
+}
+
+export async function startNewGameFromUser(user_id:string) {
+    await fetch(`/new_game`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id
+        })
+    })
 }

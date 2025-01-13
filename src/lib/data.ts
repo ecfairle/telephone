@@ -1,8 +1,11 @@
 import { sql } from '@vercel/postgres';
 import { v4 } from "uuid";
 import {
+    Game,
     GameDrawing,
 } from './data_definitions';
+import { promises as fs } from 'fs';
+import {getSignedUrl} from "@/lib/gcs";
 
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
@@ -134,9 +137,9 @@ export async function addDrawer(user_id:string, game_drawing_id:string) {
 export async function fetchGames(user_id:string) {
     try {
         const data = await sql`
-            SELECT g2.*, users.name FROM game_users g
-                    JOIN game_users g2 on (g2.game_id = g.game_id AND g2.user_id != g.user_id)
-					JOIN users on users.id = g2.user_id
+            SELECT g.game_id, users.name FROM game_users g
+                    LEFT JOIN game_users g2 on (g2.game_id = g.game_id AND g2.user_id != g.user_id)
+					LEFT JOIN users on users.id = g2.user_id
             WHERE g.user_id = ${user_id}`;
 
         const result = data.rows.reduce(
@@ -144,11 +147,63 @@ export async function fetchGames(user_id:string) {
                 if (cur.game_id in prev) {
                     return {...prev, [cur.game_id]: [...prev[cur.game_id], {'name': cur.name}]};
                 } else {
-                    return {...prev, [cur.game_id]: [{'name': cur.name}]}
+                    return {...prev, [cur.game_id]: cur.name? [{'name': cur.name}] : []}
                 }
             }, {}
         )
         return result;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
+export async function readWordList() {
+    const fileName = "/src/data/word_list.txt"
+    const file = await fs.readFile(process.cwd() + fileName, 'utf8');
+    const lines = file.split(/[\r\n]+/);
+    return lines.filter((line) => !line.startsWith('#'));
+}
+
+export async function joinGame(user_id:string, game_id:string) {
+    try {
+        const res = await sql`
+            INSERT INTO game_users (game_id, user_id) VALUES (${game_id}, ${user_id}) ON CONFLICT DO NOTHING RETURNING game_id, user_id`
+        return res.rows.length > 0 ? res.rows[0] : null;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
+export async function startNewGameFromOld(old_game_id:string) {
+    try {
+        const wordList = await readWordList();
+        const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
+        const res = await sql`
+            INSERT INTO games (original_word) VALUES (${randomWord}) RETURNING id`;
+        const newGame = res.rows[0];
+        await sql`
+            INSERT INTO game_users (game_id, user_id) select ${newGame.id} as game_id, user_id from game_users where game_id=${old_game_id}`
+        await sql`INSERT INTO game_drawings (game_id, target_word, drawing_done)
+VALUES (${newGame.id}, ${randomWord}, false)`
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
+export async function startNewGameFromUser(user_id:string) {
+    try {
+        const wordList = await readWordList();
+        const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
+        const res = await sql`
+            INSERT INTO games (original_word) VALUES (${randomWord}) RETURNING id`;
+        const newGame = res.rows[0];
+        await sql`
+            INSERT INTO game_users (game_id, user_id) VALUES (${newGame.id}, ${user_id})`
+        await sql`INSERT INTO game_drawings (game_id, target_word, drawing_done)
+VALUES (${newGame.id}, ${randomWord}, false)`
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
@@ -181,7 +236,10 @@ export async function fetchAvailableDrawings(user_id:string) {
         //         break;
         //     }
         // }
-        return data.rows;
+        return await Promise.all(data.rows.map(async (drawing) => (
+            {...drawing,
+                signed_url: await getSignedUrl(drawing.id)
+        })));
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
