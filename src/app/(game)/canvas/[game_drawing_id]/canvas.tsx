@@ -13,6 +13,7 @@ import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import {useSession} from "next-auth/react";
+import Dropdown from "@restart/ui/Dropdown";
 
 
 export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
@@ -85,48 +86,63 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                     />
 
                     <div
-                        className='flex flex-col items-center gap-y-6 divide-y divide-purple-200 py-4 dark:divide-purple-900'>
+                        className='flex flex-col items-center gap-3 pt-6'>
                         {/* Color picker */}
-                        <Button
-                            size='icon'
-                            type='button'
-                            onClick={() => setDisplayColorSelector(true)}
-                            style={{backgroundColor: strokeColor}}
-                        >
-                            {displayColorSelector && <OpenableComponent setOpen={setDisplayColorSelector}>
-                                <Github
-                                    color={strokeColor}
-                                    style={{
-                                        '--github-background-color': '#d1eff9'
-                                    }}
-                                    onChange={(color) => {
-                                        setStrokeColor(color.hex);
-                                        setDisplayColorSelector(false);
-                                    }}
-                                />
-                            </OpenableComponent>}
-
-                        </Button>
-                        {/* Size scroller */}
-                        <div className='flex flex-row gap-3 pt-6'>
                             <Button
                                 size='icon'
                                 type='button'
-                                onMouseDown={() => setDisplaySizeSelector(true)}
+                                onClick={() => setDisplayColorSelector(true)}
+                                style={{backgroundColor: strokeColor}}
                             >
-                                <Circle size={strokeWidth}/>
+                                {displayColorSelector && <OpenableComponent setOpen={setDisplayColorSelector}>
+                                    <Github
+                                        color={strokeColor}
+                                        style={{
+                                            '--github-background-color': '#d1eff9'
+                                        }}
+                                        onChange={(color) => {
+                                            setStrokeColor(color.hex);
+                                            setDisplayColorSelector(false);
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                        }}
+                                    />
+                                </OpenableComponent>}
+
                             </Button>
-                            {displaySizeSelector &&
-                                <OpenableComponent setOpen={setDisplaySizeSelector}>
-                                    <dialog open={displaySizeSelector}>
-                                        <div className='flex flex-row gap-3 pt-6'>
+                            {/* Size scroller */}
+                            <Dropdown show={displaySizeSelector}
+                                      onToggle={(nextShow) => setDisplaySizeSelector(nextShow)}>
+                                <Dropdown.Toggle>
+                                    {(props) => (
+                                        <Button size='icon'
+                                                type='button'
+                                                {...props}>
+                                            <Circle size={strokeWidth}/>
+                                        </Button>
+                                    )}
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu placement={'left'} popperConfig={{
+                                    strategy: "fixed"
+                                }} offset={[10, 8]}>
+                                    {(menuProps, meta) => (
+                                        <ul
+                                            {...menuProps}
+                                            className="border shadow-md bg-white absolute z-10"
+                                            style={{
+                                                visibility: meta.show ? "visible" : "hidden",
+                                                opacity: meta.show ? "1" : "0",
+                                            }}
+                                        >
                                             <Button
                                                 size='icon'
                                                 type='button'
                                                 variant='outline'
-                                                onClick={() => {
+                                                onClick={(e) => {
                                                     setStrokeWidth(4);
                                                     setDisplaySizeSelector(false);
+                                                    e.stopPropagation();
                                                 }}
                                             >
                                                 <Circle size={4}/>
@@ -153,71 +169,68 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                             >
                                                 <Circle size={12}/>
                                             </Button>
-                                        </div>
-                                    </dialog>
-                                </OpenableComponent>}
-                        </div>
+                                        </ul>
+                                    )}
+                                </Dropdown.Menu>
+                            </Dropdown>
                             {/* Drawing mode */}
-                            <div className='flex flex-col gap-3 pt-6'>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    disabled={!eraseMode}
-                                    onClick={handlePenClick}
-                                >
-                                    <Pen size={16}/>
-                                </Button>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    disabled={eraseMode}
-                                    onClick={handleEraserClick}
-                                >
-                                    <Eraser size={16}/>
-                                </Button>
-                            </div>
 
-                            {/* Actions */}
-                            <div className='flex flex-col gap-3 pt-6'>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleUndoClick}
-                                >
-                                    <Undo size={16}/>
-                                </Button>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleRedoClick}
-                                >
-                                    <Redo size={16}/>
-                                </Button>
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleClearClick}
-                                >
-                                    <RotateCcw size={16}/>
-                                </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                disabled={!eraseMode}
+                                onClick={handlePenClick}
+                            >
+                                <Pen size={16}/>
+                            </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                disabled={eraseMode}
+                                onClick={handleEraserClick}
+                            >
+                                <Eraser size={16}/>
+                            </Button>
 
-                                <Button
-                                    size='icon'
-                                    type='button'
-                                    variant='outline'
-                                    onClick={handleSave}
-                                >
-                                    <Save size={16}/>
-                                </Button>
-                            </div>
-                        </div>
+                        {/* Actions */}
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleUndoClick}
+                            >
+                                <Undo size={16}/>
+                            </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleRedoClick}
+                            >
+                                <Redo size={16}/>
+                            </Button>
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleClearClick}
+                            >
+                                <RotateCcw size={16}/>
+                            </Button>
+
+                            <Button
+                                size='icon'
+                                type='button'
+                                variant='outline'
+                                onClick={handleSave}
+                            >
+                                <Save size={16}/>
+                            </Button>
                     </div>
                 </div>
+            </div>
         </section>
 )
 }
