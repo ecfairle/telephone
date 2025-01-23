@@ -13,8 +13,9 @@ export default async function Layout({ children } : {children: React.ReactNode})
     }
   return (
       <div>
-      <SessionProvider session={data}><Header/></SessionProvider>
+      <SessionProvider session={data}><Header/>
       <main>{children}</main>
+      </SessionProvider>
       </div>
   )
 }

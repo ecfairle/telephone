@@ -1,4 +1,4 @@
-export async function joinGame(userId:string, gameId:string) {
+export async function joinRoom(userId:string, roomId:string) {
     const res = await fetch(`/join`, {
         method: 'POST',
         headers: {
@@ -6,10 +6,11 @@ export async function joinGame(userId:string, gameId:string) {
             'Accept': 'application/json',
         },
         body: JSON.stringify({
-            game_id: gameId,
+            room_id: roomId,
             user_id: userId
         })
     })
+    return res;
 }
 export async function uploadImage(dataURL:string, filename:string, gameDrawingId:string) {
     const res = await fetch(`/upload_url`, {
@@ -73,7 +74,7 @@ export async function startNewGameFromOld(old_game_id:string) {
     })
 }
 
-export async function startNewGameFromUser(user_id:string) {
+export async function startNewGame(room_id:string) {
     await fetch(`/new_game`, {
         method: 'POST',
         headers: {
@@ -81,7 +82,7 @@ export async function startNewGameFromUser(user_id:string) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            user_id
+            room_id
         })
     })
 }

@@ -1,9 +1,15 @@
 'use client'
 import {Button} from "@/components/button";
-import {startNewGameFromUser} from "@/lib/api";
+import {startNewGame} from "@/lib/api";
+import {useRouter} from "next/navigation";
 
-export default function NewGame({userId}: {userId: string}) {
+export default function NewGame({roomId}: {roomId: string}) {
+    const router = useRouter();
     return (
-        <Button onClick={async () => startNewGameFromUser(userId)}>New Game</Button>
+        <Button onClick={async () => {
+            await startNewGame(roomId);
+            router.refresh();
+
+        }}>New Game</Button>
     )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState} from 'react'
 import { OpenableComponent } from '@/components/modal'
 import {
     ReactSketchCanvas,
@@ -8,7 +8,7 @@ import {
 } from 'react-sketch-canvas'
 
 import { Button } from '@/components/button'
-import { Eraser, Pen, Redo, RotateCcw, Save, Undo, Circle } from 'lucide-react'
+import { Eraser, Pen, Redo, RotateCcw, Undo, Circle } from 'lucide-react'
 import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -23,7 +23,6 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
         router.push('/login');
     }
     console.log('user id' + session?.data?.user?.userId)
-    const colorInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<ReactSketchCanvasRef>(null)
     const [strokeColor, setStrokeColor] = useState('#4fab50')
     const [strokeWidth, setStrokeWidth] = useState(4)
@@ -31,11 +30,26 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
     const [word] = useState(secretWord);
     const [displaySizeSelector, setDisplaySizeSelector] = useState(false);
     const [displayColorSelector, setDisplayColorSelector] = useState(false);
-
-    function handleStrokeColorChange(event: ChangeEvent<HTMLInputElement>) {
-        setStrokeColor(event.target.value)
-        console.log(strokeColor)
-    }
+    const colors = [
+        '#B80000',
+        '#DB3E00',
+        '#FCCB00',
+        '#008B02',
+        '#006B76',
+        '#1273DE',
+        '#004DCF',
+        '#5300EB',
+        '#EB9694',
+        '#FAD0C3',
+        '#FEF3BD',
+        '#C1E1C5',
+        '#BEDADC',
+        '#C4DEF6',
+        '#BED3F3',
+        '#D4C4FB',
+        '#FFFFFF',
+        '#000000'
+    ];
 
     function handleEraserClick() {
         setEraseMode(true)
@@ -72,7 +86,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
 
     return (
         <section className='py-24'>
-            <div className='container mx-auto max-w-fit'>
+            <div className='container mx-auto max-w-fit justify-center text-center'>
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
@@ -86,7 +100,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                     />
 
                     <div
-                        className='flex flex-col items-center gap-3 pt-6'>
+                        className='flex flex-col items-center gap-3 pt-6  position-relative'>
                         {/* Color picker */}
                             <Button
                                 size='icon'
@@ -97,8 +111,9 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                 {displayColorSelector && <OpenableComponent setOpen={setDisplayColorSelector}>
                                     <Github
                                         color={strokeColor}
+                                        colors={colors}
                                         style={{
-                                            '--github-background-color': '#d1eff9'
+                                            'width': '65px',
                                         }}
                                         onChange={(color) => {
                                             setStrokeColor(color.hex);
@@ -119,23 +134,21 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                         <Button size='icon'
                                                 type='button'
                                                 {...props}>
-                                            <Circle size={strokeWidth}/>
+                                            <Circle size={strokeWidth + 3} fill="#111" strokeWidth={0}/>
                                         </Button>
                                     )}
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu placement={'left'} popperConfig={{
-                                    strategy: "fixed"
-                                }} offset={[10, 8]}>
+                                <Dropdown.Menu>
                                     {(menuProps, meta) => (
                                         <ul
                                             {...menuProps}
-                                            className="border shadow-md bg-white absolute z-10"
+                                            className="border p-2 shadow-md absolute z-10 bg-white items-center"
                                             style={{
                                                 visibility: meta.show ? "visible" : "hidden",
                                                 opacity: meta.show ? "1" : "0",
                                             }}
                                         >
-                                            <Button
+                                            <li><Button
                                                 size='icon'
                                                 type='button'
                                                 variant='outline'
@@ -145,9 +158,9 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                                     e.stopPropagation();
                                                 }}
                                             >
-                                                <Circle size={4}/>
-                                            </Button>
-                                            <Button
+                                                <Circle size={7} fill="#111" strokeWidth={0}/>
+                                            </Button></li>
+                                            <li><Button
                                                 size='icon'
                                                 type='button'
                                                 variant='outline'
@@ -156,9 +169,9 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                                     setDisplaySizeSelector(false);
                                                 }}
                                             >
-                                                <Circle size={8}/>
-                                            </Button>
-                                            <Button
+                                                <Circle size={11} fill="#111" strokeWidth={0}/>
+                                            </Button></li>
+                                            <li><Button
                                                 size='icon'
                                                 type='button'
                                                 variant='outline'
@@ -167,8 +180,9 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                                                     setDisplaySizeSelector(false);
                                                 }}
                                             >
-                                                <Circle size={12}/>
-                                            </Button>
+                                                <Circle size={15} fill="#111" strokeWidth={0}/>
+                                            </Button></li>
+
                                         </ul>
                                     )}
                                 </Dropdown.Menu>
@@ -219,17 +233,17 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                             >
                                 <RotateCcw size={16}/>
                             </Button>
-
-                            <Button
-                                size='icon'
-                                type='button'
-                                variant='outline'
-                                onClick={handleSave}
-                            >
-                                <Save size={16}/>
-                            </Button>
                     </div>
                 </div>
+                <Button
+                    className='m-4'
+                    size='lg'
+                    type='button'
+                    variant='outline'
+                    onClick={handleSave}
+                >
+                    Submit
+                </Button>
             </div>
         </section>
 )

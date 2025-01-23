@@ -1,4 +1,4 @@
-import {fetchGames, reserveGameGuess} from '@/lib/data';
+import {reserveGameGuess} from '@/lib/data';
 import { Metadata } from 'next';
 import {getSignedUrl} from "@/lib/gcs";
 import Guess from "./guess";

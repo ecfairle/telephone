@@ -1,72 +1,100 @@
-# https://www.artteacherdiaries.com/uploads/1/2/1/5/12157652/pictionary_words.pdf
-# cat src\data\word_list.txt | ForEach-Object { $_.ToLower() } | Out-File -FilePath "src\data\word_list2.txt"
-airplane
-acorn
-4th of July
-ant
-alligator
-alien
-bath tub
-baby
-apple
-bicycle
-bear
-beach
-bridge
-bone
-birthday cake
-cactus
-butterfly
-bumblebee
-chair
-car
-camera
-chocolate
-cherry
-cheeseburger
-cupcake
-computer
-coffee
-donut
-dinosaur
-diamond
-duck
-dragon
-door
-elephant
-earth
-ear
-eyeball
-envelope
-elf
-fire truck
-fire
-feather
-flamingo
-flag
-fish
-fork
-football
-foot
-ghost
-french
-fries
-fox
-glue
-giraffe
-gift
-grapes
-goose
-gnome
-hot dog
-horse
-hat
-jacket
-ice cream cone
-house
-kangaroo
-jupiter
-jellyfish
-knight
-kitten
-key
+2025-01-15,"ant,bat,bee,butterfly,camel"
+2025-01-16,"cheetah,crocodile,deer,dolphin,eagle"
+2025-01-17,"fox,giraffe,gorilla,hippopotamus,kangaroo"
+2025-01-18,"koala,leopard,lizard,octopus,owl"
+2025-01-19,"panda,penguin,rhinoceros,scorpion,shark"
+2025-01-20,"snail,snake,spider,squirrel,tiger"
+2025-01-21,"turtle,whale,wolf,zebra,flamingo"
+2025-01-22,"hedgehog,jellyfish,otter,parrot,peacock"
+2025-01-23,"anchor,backpack,balloon,basket,bell"
+2025-01-24,"bicycle,boat,bottle,box,bridge"
+2025-01-25,"brush,button,camera,candle,clock"
+2025-01-26,"comb,compass,cup,desk,diamond"
+2025-01-27,"drum,envelope,fan,fence,flag"
+2025-01-28,"flashlight,fork,glasses,glove,guitar"
+2025-01-29,"hammer,handkerchief,headphones,helmet,hook"
+2025-01-30,"key,kite,ladder,lamp,lock"
+2025-01-31,"map,mirror,nail,needle,newspaper"
+2025-02-01,"paintbrush,paperclip,pencil,perfume,pillow"
+2025-02-02,"pipe,plate,pocket,radio,razor"
+2025-02-03,"remote,ring,rope,ruler,scissors"
+2025-02-04,"screw,shovel,soap,sock,spoon"
+2025-02-05,"stapler,statue,suitcase,swing,telescope"
+2025-02-06,"tent,tie,tool,toothbrush,train"
+2025-02-07,"umbrella,vase,violin,wallet,watch"
+2025-02-08,"almond,bacon,bean,beet,blueberry"
+2025-02-09,"broccoli,cabbage,carrot,cherry,chili"
+2025-02-10,"coconut,coffee,corn,cucumber,egg"
+2025-02-11,"grape,grapefruit,honey,lemon,lettuce"
+2025-02-12,"mango,mushroom,noodle,olive,onion"
+2025-02-13,"peanut,pear,pepper,pineapple,potato"
+2025-02-14,"pumpkin,rice,salad,sausage,soup"
+2025-02-15,"spinach,strawberry,sugar,tomato,watermelon"
+2025-02-16,"yogurt,bake,bathe,boil,build"
+2025-02-17,"catch,clean,climb,cook,cough"
+2025-02-18,"cry,dig,dive,dream,drive"
+2025-02-19,"fight,fly,freeze,gather,give"
+2025-02-20,"grow,hide,hug,hunt,kick"
+2025-02-21,"kiss,knit,laugh,lift,listen"
+2025-02-22,"march,paint,play,point,pour"
+2025-02-23,"pull,push,ride,roll,shout"
+2025-02-24,"ski,smile,smoke,snore,speak"
+2025-02-25,"spill,stand,steal,swim,throw"
+2025-02-26,"tie,touch,travel,turn,wait"
+2025-02-27,"wash,whistle,win,yawn,actor"
+2025-02-28,"astronaut,baker,barber,chef,clown"
+2025-03-01,"doctor,farmer,firefighter,judge,king"
+2025-03-02,"lawyer,librarian,musician,nurse,pilot"
+2025-03-03,"police officer,president,queen,scientist,singer"
+2025-03-04,"soldier,teacher,thief,writer,airport"
+2025-03-05,"beach,cave,church,city,desert"
+2025-03-06,"forest,hospital,hotel,library,mountain"
+2025-03-07,"museum,office,park,restaurant,school"
+2025-03-08,"store,zoo,anger,beauty,belief"
+2025-03-09,"danger,death,dream,fear,freedom"
+2025-03-10,"friendship,future,history,hope,idea"
+2025-03-11,"joy,knowledge,law,life,love"
+2025-03-12,"memory,mystery,pain,peace,power"
+2025-03-13,"sadness,secret,silence,time,truth"
+2025-03-14,"blizzard,breeze,drought,earthquake,fog"
+2025-03-15,"hail,hurricane,ice,lightning,rainbow"
+2025-03-16,"storm,thunder,tornado,volcano,ankle"
+2025-03-17,"beard,brain,cheek,chin,elbow"
+2025-03-18,"eyebrow,eyelash,finger,forehead,knee"
+2025-03-19,"lip,lung,muscle,neck,shoulder"
+2025-03-20,"stomach,throat,thumb,toe,tongue"
+2025-03-21,"tooth,wrist,blender,broom,carpet"
+2025-03-22,"ceiling,closet,couch,curtain,dishwasher"
+2025-03-23,"dryer,freezer,aquarium,ashtray,awning"
+2025-03-24,"badge,barcode,binoculars,blackboard,blanket"
+2025-03-25,"blinds,bracelet,briefcase,bulletin board,bunk bed"
+2025-03-26,"calculator,calendar,can opener,cardboard,carousel"
+2025-03-27,"chandelier,chimney,clothesline,coaster,coffee maker"
+2025-03-28,"coin,colander,controller,conveyor belt,corkscrew"
+2025-03-29,"crib,crowbar,crutches,dartboard,deodorant"
+2025-03-30,"dice,dipper,doorknob,easel,extinguisher"
+2025-03-31,"figurine,filing cabinet,fireplace,fishing rod,flagpole"
+2025-04-01,"flute,fountain,funnel,garage,garbage can"
+2025-04-02,"gazebo,generator,grater,greenhouse,grill"
+2025-04-03,"hammock,hanger,harmonica,haystack,hose"
+2025-04-04,"hourglass,iron,ironing board,jacuzzi,jigsaw puzzle"
+2025-04-05,"journal,kaleidoscope,keg,kennel,kettle"
+2025-04-06,"keyboard,kiln,knitting needles,label,lantern"
+2025-04-07,"lawn mower,lectern,lens,life jacket,light bulb"
+2025-04-08,"lipstick,mailbox,mannequin,maracas,mattress"
+2025-04-09,"measuring cup,medal,megaphone,microscope,microwave"
+2025-04-10,"mixer,model,mop,mortar and pestle,mouse trap"
+2025-04-11,"mug,musical note,napkin,necklace,net"
+2025-04-12,"notebook,nutcracker,oar,oven,pacifier"
+2025-04-13,"padlock,palette,pan,paperweight,parachute"
+2025-04-14,"parking meter,passport,patio,peanut butter,pedal"
+2025-04-15,"pendulum,pepper mill,pet carrier,piano,picture frame"
+2025-04-16,"piggy bank,pin,pinwheel,pitcher,podium"
+2025-04-17,"polaroid camera,postcard,pot,power outlet,projector"
+2025-04-18,"puppet,puzzle,quilt,rack,radiator"
+2025-04-19,"raft,rag,rake,receipt,refrigerator"
+2025-04-20,"retainer,revolver,ribbon,rocking chair,roller skates"
+2025-04-21,"rolling pin,roof,rotisserie,rubber band,rug"
+2025-04-22,"safe,sailboat,salt shaker,sandpaper,saw"
+2025-04-23,"scale,scanner,scarecrow,scooter,seatbelt"
+2025-04-24,"sewing machine,shaker,shelf,shield,ship"

@@ -1,11 +1,11 @@
 import {NextRequest} from "next/server";
-import {startNewGameFromUser} from "@/lib/data";
+import {startNewGameForRoom} from "@/lib/data";
 
 export async function POST(
     request: NextRequest
 ) {
     const loadedParams = await request.json();
-    const userId = loadedParams.user_id;
-    await startNewGameFromUser(userId);
+    const roomId = loadedParams.room_id;
+    await startNewGameForRoom(roomId);
     return Response.json("Success");
 }

@@ -7,7 +7,9 @@ export default function Header() {
 
     return (
         <div className={"text-center bg-background accent-red-50 p-5"}>{
-            session? <Button onClick={() => signOut()}>Sign Out</Button> : <Button onClick={() => signIn('discord', { callbackUrl: '/' })}>Sign In</Button>
+            session?
+                <div> {session.user.name} <Button onClick={() => signOut()}>Sign Out</Button></div> :
+                <Button onClick={() => signIn('discord', { callbackUrl: '/' })}>Sign In</Button>
         }
         </div>
     )

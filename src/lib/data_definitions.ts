@@ -38,4 +38,6 @@ export type Game = {
 // );
 export type User = {
     id: string,
+    name: string,
+    image: string
 }
