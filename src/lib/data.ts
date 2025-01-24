@@ -7,8 +7,6 @@ import {
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
 
-const MAX_PEOPLE_PER_ROOM = 5;
-
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
         const data = await sql<GameDrawing>`
@@ -236,13 +234,28 @@ export async function readWordList() {
     }, {});
 }
 
+export async function getRoomies(room_id:string) {
+    try {
+        return await sql`SELECT * FROM users WHERE room_id=${room_id}`;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
 export async function joinRoom(user_id:string, room_id:string) {
     try {
-        const roomies = await sql`SELECT * FROM users WHERE room_id=${room_id}`;
-        if (roomies.rows.length >= MAX_PEOPLE_PER_ROOM) {
-            return null;
-        }
         const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id} RETURNING *`;
+        return res.rows.length > 0 ? res.rows[0] : null;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
+export async function leaveRoom(user_id:string) {
+    try {
+        const res = await sql`UPDATE users SET room_id = null where id=${user_id} RETURNING *`;
         return res.rows.length > 0 ? res.rows[0] : null;
     } catch (error) {
         console.error('Database Error:', error);

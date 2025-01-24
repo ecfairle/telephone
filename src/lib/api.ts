@@ -12,6 +12,21 @@ export async function joinRoom(userId:string, roomId:string) {
     });
     return res;
 }
+
+export async function leaveRoom(userId:string) {
+    const res = await fetch(`/leave`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            user_id: userId
+        })
+    });
+    return res;
+}
+
 export async function uploadImage(dataURL:string, filename:string, gameDrawingId:string) {
     const res = await fetch(`/upload_url`, {
         method: 'POST',

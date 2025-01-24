@@ -14,7 +14,11 @@ export default function JoinRoom({userId, roomId} : {userId:string, roomId: stri
                 const res = await joinRoom(userId, roomId);
                 if (!res.ok) {
                     const data = await res.json();
-                    setError(data);
+                    if (data === null || data === undefined) {
+                        setError('Database error.')
+                    } else {
+                        setError(data);
+                    }
                     return;
                 }
                 redirect('/');

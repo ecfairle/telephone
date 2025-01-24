@@ -10,6 +10,6 @@ export default function NewGame({roomId}: {roomId: string}) {
             await startNewGame(roomId);
             router.refresh();
 
-        }}>New Game</Button>
+        }}>Start Game</Button>
     )
 }
