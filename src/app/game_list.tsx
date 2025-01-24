@@ -10,20 +10,20 @@ export default function ListGame ({drawings, userId} : {drawings: GameDrawing[],
     console.log(drawings, userId)
     const turns = [];
     for (const drawing of drawings) {
-        if (drawing.guesser_id !== null && drawing.target_word !== null) {
-            turns.push({
-                ...drawing,
-                isDraw: false,
-                isMe: drawing.guesser_id === userId,
-                userId: drawing.guesser_id
-            })
-        }
         if (drawing.drawer_id !== null && drawing.drawing_done) {
             turns.push({
                 ...drawing,
                 isDraw: true,
                 isMe: drawing.drawer_id === userId,
                 userId: drawing.drawer_id
+            })
+        }
+        if (drawing.guesser_id !== null && drawing.target_word !== null) {
+            turns.push({
+                ...drawing,
+                isDraw: false,
+                isMe: drawing.guesser_id === userId,
+                userId: drawing.guesser_id
             })
         }
     }
@@ -64,7 +64,7 @@ export default function ListGame ({drawings, userId} : {drawings: GameDrawing[],
                                                     src={`${turn.signed_url}`}/> :
                                 <div className='w-64 h-64 bg-black'></div>}
                         </div>) : (<div className={"ml-5"}
-                                        key={idx}>{`${turn.isMe ? "You" : turn.guesser_name} guessed "${turn.target_word}"`}</div>)
+                                        key={idx}>{`${turn.isMe ? "You" : turn.guesser_name} guessed "${alreadyFinished? turn.target_word : '_______'}"`}</div>)
                 })
             }
             {!gameDone &&

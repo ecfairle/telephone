@@ -7,6 +7,9 @@ export async function POST(
     const loadedParams = await request.json();
     const userId = loadedParams.user_id;
     const roomId = loadedParams.room_id;
-    await joinRoom(userId, roomId);
+    const res = await joinRoom(userId, roomId);
+    if (res === null) {
+        return Response.json("Too many users in room", {status: 400})
+    }
     return Response.json("Success");
 }

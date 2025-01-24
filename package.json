@@ -14,7 +14,7 @@
     "@google-cloud/storage": "^7.14.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@reduxjs/toolkit": "^2.4.0",
-    "@restart/ui": "^1.9.2",
+    "@restart/ui": "^1.9.3",
     "@uiw/react-color": "^2.3.4",
     "@vercel/postgres": "^0.10.0",
     "bcrypt": "^5.1.1",

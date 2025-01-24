@@ -9,7 +9,7 @@ export async function joinRoom(userId:string, roomId:string) {
             room_id: roomId,
             user_id: userId
         })
-    })
+    });
     return res;
 }
 export async function uploadImage(dataURL:string, filename:string, gameDrawingId:string) {

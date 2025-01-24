@@ -2,6 +2,7 @@ import {createPool} from "@vercel/postgres";
 import {NextAuthOptions} from "next-auth";
 import PostgresAdapter from "@auth/pg-adapter";
 import DiscordProvider from "next-auth/providers/discord";
+import GoogleProvider from "next-auth/providers/google";
 
 const pool = createPool();
 export const authOptions: NextAuthOptions = {
@@ -11,6 +12,10 @@ export const authOptions: NextAuthOptions = {
         DiscordProvider({
             clientId: process.env.DISCORD_ID as string,
             clientSecret: process.env.DISCORD_SECRET as string
+        }),
+        GoogleProvider({
+            clientId: process.env.GOOGLE_ID as string,
+            clientSecret: process.env.GOOGLE_SECRET as string
         })
     ],
     callbacks: {

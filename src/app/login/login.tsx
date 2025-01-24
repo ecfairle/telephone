@@ -15,8 +15,12 @@ export default function LoginPage() {
         <div>
             <p>Login to access your account</p>
 
-            <button onClick={() => signIn('discord', { callbackUrl: '/' })}>
-                Login with OAuth
+            <button onClick={() => signIn('discord', {callbackUrl: '/'})}>
+                Login with Discord
+            </button>
+            <br/>
+            <button onClick={() => signIn('google', {callbackUrl: '/'})}>
+                Login with Google
             </button>
         </div>
     );

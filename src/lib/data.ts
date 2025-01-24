@@ -7,6 +7,8 @@ import {
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
 
+const MAX_PEOPLE_PER_ROOM = 5;
+
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
         const data = await sql<GameDrawing>`
@@ -99,7 +101,9 @@ export async function setDrawingDone(game_drawing_id:string) {
             return null;
         }
         const nextPlayerId = await nextPlayer(game_drawing_id);
-
+        if (nextPlayerId ===  null) {
+            return null;
+        }
         await sql<GameDrawing>`
         INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
         VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayerId})`
@@ -171,7 +175,7 @@ export async function fetchGames(user_id:string, room_id:string) {
                     LEFT JOIN game_users g2 on (g2.game_id = g.game_id AND g2.user_id != g.user_id)
 					LEFT JOIN users on users.id = g2.user_id
             WHERE g.user_id = ${user_id}
-            and original_user.room_id = ${room_id}
+            and games.room_id = ${room_id}
             and games.play_date = (current_timestamp at time zone 'PST')::date`;
 
         const result = data.rows.reduce(
@@ -234,7 +238,11 @@ export async function readWordList() {
 
 export async function joinRoom(user_id:string, room_id:string) {
     try {
-        const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id}`;
+        const roomies = await sql`SELECT * FROM users WHERE room_id=${room_id}`;
+        if (roomies.rows.length >= MAX_PEOPLE_PER_ROOM) {
+            return null;
+        }
+        const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id} RETURNING *`;
         return res.rows.length > 0 ? res.rows[0] : null;
     } catch (error) {
         console.error('Database Error:', error);

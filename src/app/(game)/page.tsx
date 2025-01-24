@@ -34,7 +34,7 @@ export default async function Home() {
       <div className={"flex flex-col"}>
     {users.map((user) => {
       return(
-        <div key={user.id} className='w-24 h-24 mt-10'>{user.name}<img src={user.image} /></div>
+        <div key={user.id} className='w-24 h-24 mt-10 truncate'>{user.name}<img className={'w-12 h-12'} src={user.image} /></div>
     )
     })}
     {Array.from({length: 5-users.length}, (v,k)=>k+1).map((idx) => (
