@@ -1,5 +1,5 @@
 import {NextRequest} from "next/server";
-import {getRoomies, joinRoom, leaveRoom} from "@/lib/data";
+import {leaveRoom} from "@/lib/data";
 
 export async function POST(
     request: NextRequest
