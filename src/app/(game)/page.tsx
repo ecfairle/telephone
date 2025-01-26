@@ -1,4 +1,4 @@
-import {fetchAvailableDrawings, fetchGames, getRoom} from '@/lib/data';
+import {fetchAvailableDrawings, fetchGames, getRoom, nextPlayer} from '@/lib/data';
 import {GameDrawing} from "@/lib/data_definitions";
 import ListGame from "@/app/game_list";
 import {redirect} from "next/navigation";
@@ -14,6 +14,9 @@ export default async function Home() {
   if (!session?.user?.userId) {
     return redirect('/login')
   }
+
+  const nextPlayerId = await nextPlayer('e1ceb18b-3ff4-4e4a-b0ba-a5c3b4c047c8');
+  console.log('NEXT PLAYER ', nextPlayerId);
   console.log('sdui----' + session?.user?.userId)
   const userId = session?.user?.userId;
   const {'room_id': roomId, 'users': roomies} = await getRoom(userId);
@@ -52,7 +55,7 @@ export default async function Home() {
     <div className={'flex flex-col mt-10'}>
       {Object.entries(games).map((game, idx) => (
           <div key={idx}>
-            <ListGame userId={userId} drawings={gameDrawings[game[0]]}/>
+            <ListGame userId={userId} initDrawings={gameDrawings[game[0]]}/>
           </div>
       ))}
     </div>

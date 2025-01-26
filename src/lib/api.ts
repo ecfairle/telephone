@@ -76,19 +76,6 @@ function dataURLtoFile(dataurl:string, filename:string) {
     return new File([u8arr], filename, {type:mime});
 }
 
-export async function startNewGameFromOld(old_game_id:string) {
-    await fetch(`/duplicate_game`, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            old_game_id
-        })
-    })
-}
-
 export async function startNewGame(room_id:string) {
     await fetch(`/new_game`, {
         method: 'POST',
@@ -99,5 +86,16 @@ export async function startNewGame(room_id:string) {
         body: JSON.stringify({
             room_id
         })
+    })
+}
+
+export async function getGame(game_id:string) {
+    console.log('GAME ID' + game_id)
+    return await fetch(`/game/${game_id}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
     })
 }

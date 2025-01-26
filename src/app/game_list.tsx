@@ -1,14 +1,34 @@
 'use client'
 import {GameDrawing} from "@/lib/data_definitions";
 import Link from "next/link";
+import {useEffect, useState} from "react";
+import {getGame} from "@/lib/api";
 
 
-export default function ListGame ({drawings, userId} : {drawings: GameDrawing[], userId: string}) {
+export default function ListGame ({initDrawings, userId} : {initDrawings: GameDrawing[], userId: string}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
-    console.log(drawings, userId)
+    const [drawings, setDrawings] = useState(initDrawings);
+    const gameId = drawings[0].game_id;
     const turns = [];
+    useEffect(() => {
+        const fetchGameData = async () => {
+            try {
+                const res = await getGame(gameId);
+                const result = await res.json();
+                setDrawings(result['drawings']);
+            } catch {
+
+            } finally {
+                setTimeout(fetchGameData, 5000);
+            }
+
+
+        }
+        fetchGameData();
+        }, [gameId])
+
     for (const drawing of drawings) {
         if (drawing.drawer_id !== null && drawing.drawing_done) {
             turns.push({
