@@ -92,14 +92,15 @@ export async function setDrawingDone(game_drawing_id:string) {
     try {
         const data = await sql<GameDrawing>`
         UPDATE game_drawings SET drawing_done=true
-        WHERE game_drawings.id = ${game_drawing_id}
+        WHERE game_drawings.id = ${game_drawing_id} AND game_drawings.drawing_done=false
         RETURNING *`;
         const drawing = data.rows.length > 0 ? data.rows[0] : null;
-        if (!drawing) {
-            return null;
+        if (drawing === null) {
+            throw new Error('Drawing already set or invalid id');
         }
         const nextPlayerId = await nextPlayer(game_drawing_id);
-        if (nextPlayerId ===  null) {
+        if (nextPlayerId === null) {
+            // no more players
             return null;
         }
         await sql<GameDrawing>`
@@ -138,8 +139,18 @@ WHERE og.id=${game_drawing_id}`;
 
 export async function setGuess(game_drawing_id:string, guess: string) {
     try {
-        const nextPlayerId = await nextPlayer(game_drawing_id);
+        const data = await sql<GameDrawing>`
+            SELECT * FROM game_drawings
+            WHERE game_drawings.id = ${game_drawing_id}`;
+        const gameDrawing = data.rows.length > 0 ? data.rows[0] : null;
+        if (gameDrawing === null) {
+            throw new Error(`Game drawing not found: ${game_drawing_id}`);
+        }
+        if (gameDrawing.target_word !== null) {
+            throw new Error(`Guess already set`);
+        }
 
+        const nextPlayerId = await nextPlayer(game_drawing_id);
         await sql<GameDrawing>`
         UPDATE game_drawings SET target_word=${guess},
                              drawer_id=${nextPlayerId}
