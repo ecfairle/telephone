@@ -1,10 +1,8 @@
-import {NextRequest} from "next/server";
 import {fetchAvailableDrawings} from "@/lib/data";
-import {NextApiRequest} from "next";
 
 
 export async function GET(
-    request: Request, { params }: { params: Promise<{ slug: string }> }
+    request: Request, { params }: { params: Promise<{ game_id: string }> }
 ) {
     const gameId = (await params).game_id;
     if (gameId === undefined) {

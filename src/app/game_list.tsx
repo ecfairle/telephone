@@ -112,5 +112,5 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
 }
 
 function UserTag({userColors, name}:{userColors:{[name:string]: string }, name:string}) {
-    return (<span className={userColors[name]}>{name}</span> )
+    return (<span className={userColors[name]}><strong>{name}</strong></span> )
 }
