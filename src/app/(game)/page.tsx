@@ -8,6 +8,10 @@ import NewGame from "./new_game";
 import ShareLink from "@/app/(game)/share_link";
 import LeaveRoom from "@/app/(game)/leave_room";
 
+const colors = [
+  'text-blue-500', 'text-red-500', 'text-green-500', 'text-amber-500', 'text-violet-500'
+];
+
 export default async function Home() {
   // const params = await searchParams;
   const session = await getServerSession(authOptions);
@@ -33,6 +37,7 @@ export default async function Home() {
   console.log(gameDrawings);
   console.log(roomies);
   console.log(roomId);
+  const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx], ...prev}), {})
   return (<div className={"ml-5  container"}>
     {roomies.length > 1 && <LeaveRoom/>}
     {Object.keys(games).length === 0 ?
@@ -55,7 +60,7 @@ export default async function Home() {
     <div className={'flex flex-col mt-10'}>
       {Object.entries(games).map((game, idx) => (
           <div key={idx}>
-            <ListGame userId={userId} initDrawings={gameDrawings[game[0]]}/>
+            <ListGame userColors={userColors} userId={userId} initDrawings={gameDrawings[game[0]]}/>
           </div>
       ))}
     </div>

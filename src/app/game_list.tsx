@@ -7,7 +7,7 @@ import {Button} from "@/components/button";
 import {Brush, Eye} from "lucide-react";
 
 
-export default function ListGame ({initDrawings, userId} : {initDrawings: GameDrawing[], userId: string}) {
+export default function ListGame ({userColors, initDrawings, userId} : {userColors: {[name:string]: string }, initDrawings: GameDrawing[], userId: string}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
@@ -49,6 +49,7 @@ export default function ListGame ({initDrawings, userId} : {initDrawings: GameDr
             })
         }
     }
+
     if (drawings.length === 0) {
         return null;
     }
@@ -73,20 +74,20 @@ export default function ListGame ({initDrawings, userId} : {initDrawings: GameDr
             myTurn = true;
         }
     }
-    console.log(alreadyFinished, isDrawing, isGuessing, myTurn)
+    console.log(alreadyFinished, isDrawing, isGuessing, myTurn, userColors)
     return (
         <div className={"inline-flex mt-5 ml-5"}>
-            <div className={"w-24 h-24 overflow-hidden text-ellipsis"}>{`${firstDrawing.drawer_name}'s drawing`}</div>
+            <div className={"w-24 h-24 overflow-hidden text-ellipsis"}><UserTag userColors={userColors} name={firstDrawing.drawer_name}/>{`'s drawing`}</div>
             <div className={"w-24 h-24 ml-5 overflow-hidden text-ellipsis"}>{`The word is: ${alreadyFinished? firstDrawing.target_word : '_______'}`}</div>
             {
                 turns.reverse().map((turn, idx) => {
                     return turn.isDraw ? (
-                        <div className={`w-80 h-80 ml-5`} key={idx}>{`${turn.isMe ? "You" : turn.drawer_name} drew `}
+                        <div className={`w-80 h-80 ml-5`} key={idx}><UserTag userColors={userColors} name={turn.drawer_name}/>{` drew `}
                             {alreadyFinished ? <img className={'border w-64 h-64'} alt='past drawing'
                                                     src={`${turn.signed_url}`}/> :
                                 <div className='w-64 h-64 bg-black'></div>}
                         </div>) : (<div className={"ml-5"}
-                                        key={idx}>{`${turn.isMe ? "You" : turn.guesser_name} guessed "${alreadyFinished? turn.target_word : '_______'}"`}</div>)
+                                        key={idx}><UserTag userColors={userColors} name={turn.guesser_name}/> <p>{`guessed "${alreadyFinished? turn.target_word : '_______'}"`}</p></div>)
                 })
             }
             {!gameDone &&
@@ -102,10 +103,14 @@ export default function ListGame ({initDrawings, userId} : {initDrawings: GameDr
                                 <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
                                     className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}<Eye
                                     size={30}/></Button></Link> :
-                            <p>{`${curPlayer} is ${isGuessing ? 'guessing' : 'drawing'}`}</p>
+                            <div><UserTag userColors={userColors} name={curPlayer}/><p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
                     }
                 </div>
             }
         </div>
     )
+}
+
+function UserTag({userColors, name}:{userColors:{[name:string]: string }, name:string}) {
+    return (<span className={userColors[name]}>{name}</span> )
 }
