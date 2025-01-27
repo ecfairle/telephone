@@ -3,6 +3,7 @@ import {GameDrawing} from "@/lib/data_definitions";
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import {getGame} from "@/lib/api";
+import {Button} from "@/components/button";
 
 
 export default function ListGame ({initDrawings, userId} : {initDrawings: GameDrawing[], userId: string}) {
@@ -79,7 +80,7 @@ export default function ListGame ({initDrawings, userId} : {initDrawings: GameDr
             {
                 turns.reverse().map((turn, idx) => {
                     return turn.isDraw ? (
-                        <div className={"w-80 h-80 ml-5"} key={idx}>{`${turn.isMe ? "You" : turn.drawer_name} drew `}
+                        <div className={`w-80 h-80 ml-5`} key={idx}>{`${turn.isMe ? "You" : turn.drawer_name} drew `}
                             {alreadyFinished ? <img className={'border w-64 h-64'} alt='past drawing'
                                                     src={`${turn.signed_url}`}/> :
                                 <div className='w-64 h-64 bg-black'></div>}
@@ -95,8 +96,8 @@ export default function ListGame ({initDrawings, userId} : {initDrawings: GameDr
                                     href={{
                                         pathname: `/canvas/${lastDrawing.id}`
                                     }}
-                                > {"Your turn to draw"}</Link> :
-                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><p>{`Your turn to guess`}</p></Link> :
+                                > <Button className={'bg-blue-500 text-white h-20'}>{`Your turn to draw`}</Button></Link> :
+                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}</Button></Link> :
                             <p>{`${curPlayer} is ${isGuessing ? 'guessing' : 'drawing'}`}</p>
                     }
                 </div>
