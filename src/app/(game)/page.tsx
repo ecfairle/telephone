@@ -1,5 +1,4 @@
 import {fetchAvailableDrawings, fetchGames, getRoom, nextPlayer} from '@/lib/data';
-import {GameDrawing} from "@/lib/data_definitions";
 import ListGame from "@/app/game_list";
 import {redirect} from "next/navigation";
 import {getServerSession} from "next-auth";
@@ -25,19 +24,11 @@ export default async function Home() {
   const userId = session?.user?.userId;
   const {'room_id': roomId, 'users': roomies} = await getRoom(userId);
   const games = await fetchGames(userId, roomId);
-  console.log('games: ' + games);
-  const drawings = await fetchAvailableDrawings(Object.keys(games));
-  const gameDrawings = drawings.reduce((prev: {[key: string]: GameDrawing[]}, cur) => {
-    if (cur.game_id in prev) {
-      return {...prev, [cur.game_id]: [...prev[cur.game_id], cur]};
-    } else {
-      return {...prev, [cur.game_id]: [cur]}
-    }
-  }, {});
-  console.log(gameDrawings);
+  console.log('games: ' + Object.keys(games));
+  const {drawings} = await fetchAvailableDrawings(Object.keys(games));
   console.log(roomies);
   console.log(roomId);
-  const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx], ...prev}), {})
+  const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx],  ...prev}), {});
   return (<div className={"ml-5  container"}>
     {roomies.length > 1 && <LeaveRoom/>}
     {Object.keys(games).length === 0 ?
@@ -46,7 +37,7 @@ export default async function Home() {
           <div className={"flex flex-col"}>
             {roomies.map((user) => {
               return(
-                  <div key={user.id} className='w-24 h-24 mt-10 truncate'>{user.name}
+                  <div key={user.id} className='w-24 h-24 mt-10 truncate'><UserTag userColors={userColors} name={user.name}/>
                     <img className={'w-12 h-12'} src={user.image} />
                   </div>)})
             }
@@ -60,7 +51,7 @@ export default async function Home() {
     <div className={'flex flex-col mt-10'}>
       {Object.entries(games).map((game, idx) => (
           <div key={idx}>
-            <ListGame userColors={userColors} userId={userId} initDrawings={gameDrawings[game[0]]}/>
+            <ListGame userColors={userColors} userId={userId} initDrawings={drawings[game[0]]}/>
           </div>
       ))}
     </div>
@@ -69,3 +60,6 @@ export default async function Home() {
     )
     }
 
+function UserTag({userColors, name}:{userColors:{[name:string]: string }, name:string}) {
+  return (<span className={userColors[name]}><strong>{name}</strong></span> )
+}

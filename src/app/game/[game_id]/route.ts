@@ -12,5 +12,5 @@ export async function GET(
         return Response.json("Failed to get game", {status: 400});
     }
     const drawings = await fetchAvailableDrawings([gameId]);
-    return Response.json({drawings});
+    return Response.json({drawings: drawings.drawings, next_players: drawings.nextPlayers});
 }

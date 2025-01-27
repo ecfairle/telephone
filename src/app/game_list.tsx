@@ -12,14 +12,19 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
     let isDrawing = false;
     let isGuessing = false;
     const [drawings, setDrawings] = useState(initDrawings);
+    const [nextPlayer, setNextPlayer] = useState(null);
+    console.log('drawings ', drawings);
     const gameId = drawings[0].game_id;
     const turns = [];
+    console.log("nextPlayer", nextPlayer);
     useEffect(() => {
         const fetchGameData = async () => {
             try {
                 const res = await getGame(gameId);
                 const result = await res.json();
-                setDrawings(result['drawings']);
+                setDrawings(result['drawings'][gameId]);
+                console.log("nextPlayers????", result['next_players'][gameId])
+                setNextPlayer(result['next_players'][gameId]['name']);
             } catch {
 
             } finally {
@@ -77,17 +82,22 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
     console.log(alreadyFinished, isDrawing, isGuessing, myTurn, userColors)
     return (
         <div className={"inline-flex mt-5 ml-5"}>
-            <div className={"w-24 h-24 overflow-hidden text-ellipsis"}><UserTag userColors={userColors} name={firstDrawing.drawer_name}/>{`'s drawing`}</div>
-            <div className={"w-24 h-24 ml-5 overflow-hidden text-ellipsis"}>{`The word is: ${alreadyFinished? firstDrawing.target_word : '_______'}`}</div>
+            <div className={"w-24 h-24 overflow-hidden text-ellipsis"}><UserTag userColors={userColors}
+                                                                                name={firstDrawing.drawer_name}/>{`'s drawing`}
+            </div>
+            <div
+                className={"w-24 h-24 ml-5 overflow-hidden text-ellipsis"}>{`The word is: ${alreadyFinished ? firstDrawing.target_word : '_______'}`}</div>
             {
                 turns.reverse().map((turn, idx) => {
                     return turn.isDraw ? (
-                        <div className={`w-80 h-80 ml-5`} key={idx}><UserTag userColors={userColors} name={turn.drawer_name}/>{` drew `}
+                        <div className={`w-80 h-80 ml-5`} key={idx}><UserTag userColors={userColors}
+                                                                             name={turn.drawer_name}/>{` drew `}
                             {alreadyFinished ? <img className={'border w-64 h-64'} alt='past drawing'
                                                     src={`${turn.signed_url}`}/> :
                                 <div className='w-64 h-64 bg-black'></div>}
                         </div>) : (<div className={"ml-5"}
-                                        key={idx}><UserTag userColors={userColors} name={turn.guesser_name}/> <p>{`guessed "${alreadyFinished? turn.target_word : '_______'}"`}</p></div>)
+                                        key={idx}><UserTag userColors={userColors} name={turn.guesser_name}/>
+                        <p>{`guessed "${alreadyFinished ? turn.target_word : '_______'}"`}</p></div>)
                 })
             }
             {!gameDone &&
@@ -103,10 +113,13 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
                                 <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
                                     className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}<Eye
                                     size={30}/></Button></Link> :
-                            <div><UserTag userColors={userColors} name={curPlayer}/><p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
+                            <div><UserTag userColors={userColors} name={curPlayer}/>
+                                <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
                     }
+
                 </div>
             }
+            <div className='w-80 h-80 ml-5'>{nextPlayer && <span><UserTag userColors={userColors} name={nextPlayer}/> {` is ${isGuessing? "drawing": "guessing"} next`}</span>}</div>
         </div>
     )
 }

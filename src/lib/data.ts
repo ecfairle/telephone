@@ -98,18 +98,40 @@ export async function setDrawingDone(game_drawing_id:string) {
         if (drawing === null) {
             throw new Error('Drawing already set or invalid id');
         }
-        const nextPlayerId = await nextPlayer(game_drawing_id);
-        if (nextPlayerId === null) {
+        const nextPlayer = await nextPlayerByGame(drawing.game_id);
+        if (nextPlayer === null) {
             // no more players
             return null;
         }
         await sql<GameDrawing>`
         INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
-        VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayerId})`
+        VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id})`
 
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to update game_drawings record.');
+    }
+}
+
+export async function nextPlayerByGame(game_id:string) {
+    try {
+        const data = await sql`SELECT users.*, game_users.play_order as play_order from game_users join users on users.id = game_users.user_id
+    WHERE game_id = ${game_id}`;
+
+        const pastData = await sql<GameDrawing>`SELECT * from game_drawings WHERE game_id = ${game_id}`;
+
+        const pastGamers = pastData.rows.reduce((prev, cur) => {
+            prev.add(cur.guesser_id);
+            prev.add(cur.drawer_id);
+            return prev;
+        }, new Set());
+
+        const haventPlayed = data.rows.filter((gu) => !pastGamers.has(gu.id))
+        const playOrder = haventPlayed.sort((gu) => gu.play_order);
+        return playOrder.length > 0 ? playOrder[0] : null;
+    } catch(error) {
+        console.error('Database Error:', error);
+        throw new Error('Database Error');
     }
 }
 
@@ -150,7 +172,8 @@ export async function setGuess(game_drawing_id:string, guess: string) {
             throw new Error(`Guess already set`);
         }
 
-        const nextPlayerId = await nextPlayer(game_drawing_id);
+        const nextPlayer = await nextPlayerByGame(gameDrawing.game_id);
+        const nextPlayerId = nextPlayer? nextPlayer.id : null;
         await sql<GameDrawing>`
         UPDATE game_drawings SET target_word=${guess},
                              drawer_id=${nextPlayerId}
@@ -330,7 +353,7 @@ export async function startNewGameForRoom(room_id:string) {
 export async function fetchAvailableDrawings(gameIds:string[]) {
     try {
         if (gameIds.length === 0) {
-            return [];
+            return {drawings: {}, nextPlayers: {}};
         }
         const data:QueryResult<GameDrawing>[] = await Promise.all(gameIds.map(async (gameId) => await sql<GameDrawing>`
             SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name FROM game_drawings 
@@ -358,10 +381,24 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             drawings = drawings.concat(thisGameDrawings.reverse());
         }
 
-        return await Promise.all(drawings.map(async (drawing) => (
+        const updatedDrawings = await Promise.all(drawings.map(async (drawing) => (
             {...drawing,
                 signed_url: await getSignedUrl(drawing.id)
         })));
+
+        const gameDrawings = updatedDrawings.reduce((prev: {[key: string]: GameDrawing[]}, cur) => {
+            if (cur.game_id in prev) {
+                return {...prev, [cur.game_id]: [...prev[cur.game_id], cur]};
+            } else {
+                return {...prev, [cur.game_id]: [cur]}
+            }
+        }, {});
+
+        const nextPlayers = await Promise.all(gameIds.map(async (gameId) =>
+            ({gameId, nextPlayer: await nextPlayerByGame(gameId)})));
+        const nextPlayersByGame = nextPlayers.reduce((prev, cur) =>
+            ({...prev, [cur.gameId]: cur.nextPlayer}), {})
+        return {drawings: gameDrawings, nextPlayers: nextPlayersByGame};
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
