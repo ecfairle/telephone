@@ -29,12 +29,12 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
     return (
             <div className='container mx-auto max-w-fit'>
                 <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
-                    <label>Guess: <input name="guess" autoComplete="off"/></label>
+                    <label>Guess: <input className={'rounded-xl p-2 border-black border'} name="guess" autoComplete="off"/></label>
                     <Button
-                        size='lg'
+                        size='xl'
                         type='submit'
-                        color={''}>
-                        <SendHorizonal/>
+                        className={'m-5 bg-blue-500 text-white'}>
+                        <SendHorizonal size={25}/>
                     </Button>
                 </form>
                 <img alt='drawing' src={`${imageUrl}`} className='border border-black'/>

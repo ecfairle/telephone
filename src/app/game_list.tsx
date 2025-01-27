@@ -4,6 +4,7 @@ import Link from "next/link";
 import {useEffect, useState} from "react";
 import {getGame} from "@/lib/api";
 import {Button} from "@/components/button";
+import {Brush, Eye} from "lucide-react";
 
 
 export default function ListGame ({initDrawings, userId} : {initDrawings: GameDrawing[], userId: string}) {
@@ -96,8 +97,11 @@ export default function ListGame ({initDrawings, userId} : {initDrawings: GameDr
                                     href={{
                                         pathname: `/canvas/${lastDrawing.id}`
                                     }}
-                                > <Button className={'bg-blue-500 text-white h-20'}>{`Your turn to draw`}</Button></Link> :
-                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}</Button></Link> :
+                                > <Button className={'bg-blue-500 text-white h-20'}>{`Your turn to draw `} <Brush
+                                    size={30}/></Button></Link> :
+                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
+                                    className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}<Eye
+                                    size={30}/></Button></Link> :
                             <p>{`${curPlayer} is ${isGuessing ? 'guessing' : 'drawing'}`}</p>
                     }
                 </div>

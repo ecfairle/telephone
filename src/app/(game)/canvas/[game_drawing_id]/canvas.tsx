@@ -8,7 +8,7 @@ import {
 } from 'react-sketch-canvas'
 
 import { Button } from '@/components/button'
-import { Eraser, Pen, Redo, RotateCcw, Undo, Circle } from 'lucide-react'
+import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal} from 'lucide-react'
 import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -236,13 +236,13 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
                     </div>
                 </div>
                 <Button
-                    className='m-4'
-                    size='lg'
+                    className='m-4 bg-blue-500 text-white'
+                    size='xl'
                     type='button'
                     variant='outline'
                     onClick={handleSave}
                 >
-                    Submit
+                    <SendHorizonal size={25}/>
                 </Button>
             </div>
         </section>
