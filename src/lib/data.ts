@@ -126,9 +126,9 @@ export async function nextPlayerByGame(game_id:string) {
             return prev;
         }, new Set());
 
-        const haventPlayed = data.rows.filter((gu) => !pastGamers.has(gu.id))
-        const playOrder = haventPlayed.sort((gu) => gu.play_order);
-        return playOrder.length > 0 ? playOrder[0] : null;
+        const haventPlayed = data.rows.filter((gu) => !pastGamers.has(gu.id));
+        haventPlayed.sort((a,b) => a.play_order-b.play_order);
+        return haventPlayed.length > 0 ? haventPlayed[0] : null;
     } catch(error) {
         console.error('Database Error:', error);
         throw new Error('Database Error');
@@ -396,8 +396,9 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
 
         const nextPlayers = await Promise.all(gameIds.map(async (gameId) =>
             ({gameId, nextPlayer: await nextPlayerByGame(gameId)})));
+
         const nextPlayersByGame = nextPlayers.reduce((prev, cur) =>
-            ({...prev, [cur.gameId]: cur.nextPlayer}), {})
+            ({...prev, [cur.gameId]: cur.nextPlayer}), {});
         return {drawings: gameDrawings, nextPlayers: nextPlayersByGame};
     } catch (error) {
         console.error('Database Error:', error);

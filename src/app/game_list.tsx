@@ -16,15 +16,14 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
     console.log('drawings ', drawings);
     const gameId = drawings[0].game_id;
     const turns = [];
-    console.log("nextPlayer", nextPlayer);
     useEffect(() => {
         const fetchGameData = async () => {
             try {
                 const res = await getGame(gameId);
                 const result = await res.json();
                 setDrawings(result['drawings'][gameId]);
-                console.log("nextPlayers????", result['next_players'][gameId])
-                setNextPlayer(result['next_players'][gameId]['name']);
+                if (result['next_players'].has(gameId))  setNextPlayer(result['next_players'][gameId]['name']);
+                else setNextPlayer(null);
             } catch {
 
             } finally {
@@ -95,7 +94,7 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
                             {alreadyFinished ? <img className={'border w-64 h-64'} alt='past drawing'
                                                     src={`${turn.signed_url}`}/> :
                                 <div className='w-64 h-64 bg-black'></div>}
-                        </div>) : (<div className={"ml-5"}
+                        </div>) : (<div className={"w-80 h-80 ml-5"}
                                         key={idx}><UserTag userColors={userColors} name={turn.guesser_name}/>
                         <p>{`guessed "${alreadyFinished ? turn.target_word : '_______'}"`}</p></div>)
                 })
