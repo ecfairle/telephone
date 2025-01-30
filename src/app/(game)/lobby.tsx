@@ -11,9 +11,9 @@ const colors = [
     'text-blue-500', 'text-red-500', 'text-green-500', 'text-amber-500', 'text-violet-500'
 ];
 
-export default function Lobby({roomId, userId} :{roomId: string, userId: string}) {
-    const [roomies, setRoomies] = useState<User[]>([]);
-    const [games, setGames] = useState({});
+export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string, userId: string, users: User[], gamesMap:{ [game_id: string]: {name: string}[] }}) {
+    const [roomies, setRoomies] = useState<User[]>(users);
+    const [games, setGames] = useState(gamesMap);
 
     useEffect(() => {
         const fetchRoomData = async () => {
@@ -24,10 +24,7 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string}
                 setRoomies(result['roomies']);
             } catch(error) {
                 console.log('error' + error)
-
             }
-
-
         }
         fetchRoomData();
         const intervalId = setInterval(fetchRoomData, 5000); // Fetch every 5 seconds

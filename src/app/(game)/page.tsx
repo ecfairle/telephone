@@ -1,4 +1,4 @@
-import {getRoom} from '@/lib/data';
+import {fetchGames, getRoom} from '@/lib/data';
 import {redirect} from "next/navigation";
 import {getServerSession} from "next-auth";
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
@@ -10,8 +10,10 @@ export default async function Home() {
   if (!session?.user?.userId) {
     return redirect('/login')
   }
+  const userId = session.user.userId;
 
-  const {'room_id': roomId} = await getRoom(session.user.userId);
-  return (<Lobby roomId={roomId} userId={session.user.userId} />
+  const {'room_id': roomId, users} = await getRoom(userId);
+  const games = await fetchGames(userId, roomId);
+  return (<Lobby roomId={roomId} users={users} gamesMap={games} userId={userId} />
     )
     }
