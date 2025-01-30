@@ -39,5 +39,7 @@ export type Game = {
 export type User = {
     id: string,
     name: string,
-    image: string
+    email: string,
+    image: string,
+    room_id: string
 }

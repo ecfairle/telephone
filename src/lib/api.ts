@@ -99,3 +99,13 @@ export async function getGame(game_id:string) {
         },
     })
 }
+
+export async function getRoomData() {
+    return await fetch(`/room`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+    })
+}

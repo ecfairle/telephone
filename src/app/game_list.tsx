@@ -1,5 +1,5 @@
 'use client'
-import {GameDrawing} from "@/lib/data_definitions";
+import {GameDrawing, User} from "@/lib/data_definitions";
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import {getGame} from "@/lib/api";
@@ -7,30 +7,27 @@ import {Button} from "@/components/button";
 import {Brush, Eye} from "lucide-react";
 
 
-export default function ListGame ({userColors, initDrawings, userId} : {userColors: {[name:string]: string }, initDrawings: GameDrawing[], userId: string}) {
+export default function ListGame ({userColors, userId, gameId} : {userColors: {[name:string]: string }, userId: string, gameId: string}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
-    const [drawings, setDrawings] = useState(initDrawings);
-    const [nextPlayer, setNextPlayer] = useState(null);
-    console.log('drawings ', drawings);
-    const gameId = drawings[0].game_id;
+    const [drawings, setDrawings] = useState<GameDrawing[]>([]);
+    const [nextPlayer, setNextPlayer] = useState<string|null>(null);
+    console.log('gameId ', gameId);
     const turns = [];
     useEffect(() => {
         const fetchGameData = async () => {
             try {
                 const res = await getGame(gameId);
-                const result = await res.json();
+                const result:{drawings: {[game_id:string]: GameDrawing[]}, next_players: {[game_id:string]: User} } = await res.json();
                 setDrawings(result['drawings'][gameId]);
-                if (result['next_players'].has(gameId))  setNextPlayer(result['next_players'][gameId]['name']);
+                if (gameId in result['next_players'] && result['next_players'][gameId] !== null)  setNextPlayer(result['next_players'][gameId]['name']);
                 else setNextPlayer(null);
             } catch {
 
             } finally {
                 setTimeout(fetchGameData, 5000);
             }
-
-
         }
         fetchGameData();
         }, [gameId])
@@ -93,10 +90,10 @@ export default function ListGame ({userColors, initDrawings, userId} : {userColo
                                                                              name={turn.drawer_name}/>{` drew `}
                             {alreadyFinished ? <img className={'border w-64 h-64'} alt='past drawing'
                                                     src={`${turn.signed_url}`}/> :
-                                <div className='w-64 h-64 bg-black'></div>}
+                                null}
                         </div>) : (<div className={"w-80 h-80 ml-5"}
                                         key={idx}><UserTag userColors={userColors} name={turn.guesser_name}/>
-                        <p>{`guessed "${alreadyFinished ? turn.target_word : '_______'}"`}</p></div>)
+                        <p>{`guessed${alreadyFinished ? ` ${turn.target_word}` : ""}`}</p></div>)
                 })
             }
             {!gameDone &&
