@@ -16,7 +16,7 @@ export default async function Page({
     const roomId = (await params).room_id;
     const session = await getServerSession(authOptions);
     if (!session?.user?.userId) {
-        return redirect('/login')
+        return redirect(`/login?room_id=${roomId}`)
     }
     console.log('room id ?' + roomId)
     const userId = session.user.userId;

@@ -8,9 +8,6 @@ import {redirect} from "next/navigation";
 
 export default async function Layout({ children } : {children: React.ReactNode}) {
     const data = await getServerSession(authOptions);
-    if (!data) {
-        return redirect("/login");
-    }
   return (
       <div>
       <SessionProvider session={data}><Header/>
