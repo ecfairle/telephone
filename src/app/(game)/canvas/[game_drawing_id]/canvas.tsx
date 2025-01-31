@@ -85,7 +85,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
     }
 
     return (
-        <section className='py-24'>
+        <section className='py-10 p-5'>
             <div className='container mx-auto max-w-fit justify-center text-center'>
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
                 <div className='mt-6 flex max-w-2xl gap-4'>

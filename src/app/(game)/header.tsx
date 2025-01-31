@@ -6,7 +6,7 @@ export default function Header() {
     const { data: session } = useSession();
 
     return (
-        <div className={"text-right bg-background accent-red-50 p-5"}>{
+        <div className={"text-left bg-background accent-red-50 p-5"}>{
             session?
                 <div> <span className={'m-5'}>{session.user.name}</span> <Button onClick={() => signOut()}>Sign Out</Button></div> :
                 <Button onClick={() => signIn('discord', { callbackUrl: '/' })}>Sign In</Button>
