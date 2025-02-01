@@ -27,9 +27,9 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
     }
 
     return (
-            <div className='container mx-auto max-w-fit'>
+            <div className='container mx-auto max-w-fit pr-5 pl-2'>
                 <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
-                    <label>Guess: <input className={'rounded-xl p-2 border-black border'} name="guess" autoComplete="off"/></label>
+                    <label>Guess: <input className={'rounded-xl p-2 border-black border w-80'} name="guess" autoComplete="off"/></label>
                     <Button
                         size='xl'
                         type='submit'
