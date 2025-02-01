@@ -77,14 +77,61 @@ export default function ListGame ({userColors, userId, gameId} : {userColors: {[
     }
     console.log(alreadyFinished, isDrawing, isGuessing, myTurn, userColors)
     return (
-        <div className={"inline-flex mt-5 ml-5"}>
+        <div className={"inline-flex mt-5 ml-3"}>
             <div className={"w-24 h-24 overflow-hidden text-ellipsis"}><UserTag userColors={userColors}
                                                                                 name={firstDrawing.drawer_name}/>{`'s drawing`}
             </div>
+            {!myTurn || gameDone ?
+
+                alreadyFinished ?
+                <GameOverview userColors={userColors} firstDrawing={firstDrawing} gameDone={gameDone} alreadyFinished={alreadyFinished}
+                              turns={turns} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer}/>
+                :
+                <GameOverviewPrePlay userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer}/>
+                :
+                <div className='w-40 h-40 ml-3'>
+                    {
+                        myTurn ? isDrawing ?
+                                <Link
+                                    href={{
+                                        pathname: `/canvas/${lastDrawing.id}`
+                                    }}
+                                > <Button className={'bg-blue-500 text-white h-20'}>{`Your turn to draw `} <br/> <Brush
+                                    size={30}/></Button></Link> :
+                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
+                                    className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}<Eye
+                                    size={30}/></Button></Link> :
+                            <div><UserTag userColors={userColors} name={curPlayer}/>
+                                <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
+                    }
+
+                </div>
+            }
+
+        </div>
+    )
+}
+function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer} : {userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string}) {
+    return (<div className={'inline-flex'}>
+        <div className='w-40 h-40 ml-3'><UserTag userColors={userColors} name={curPlayer}/>
+            <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p>
+            <br/>
+            {nextPlayer && <span><UserTag userColors={userColors}
+                                          name={nextPlayer}/>
+                {` is ${isGuessing ? "drawing" : "guessing"} next`}</span>}</div>
+    </div>)
+}
+
+function GameOverview({userColors, firstDrawing, gameDone, alreadyFinished, turns, nextPlayer, isGuessing, curPlayer} :
+    {userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string, firstDrawing:GameDrawing, gameDone: boolean, alreadyFinished:boolean, turns:(GameDrawing&{isDraw: boolean})[]}) {
+    return (
+        <div className={"inline-flex"}>
             <div
-                className={"w-24 h-24 ml-5 overflow-hidden text-ellipsis"}>{`The word is: ${alreadyFinished ? firstDrawing.target_word : '_______'}`}</div>
+                className={"w-24 h-24 ml-5 overflow-hidden text-ellipsis"}>
+                {`The word is: ${alreadyFinished ? firstDrawing.target_word : '_______'}`}
+            </div>
             {
-                turns.reverse().map((turn, idx) => {
+                turns.toReversed().map((turn, idx) => {
                     return turn.isDraw ? (
                         <div className={`w-80 h-80 ml-5`} key={idx}><UserTag userColors={userColors}
                                                                              name={turn.drawer_name}/>{` drew `}
@@ -97,29 +144,16 @@ export default function ListGame ({userColors, userId, gameId} : {userColors: {[
                 })
             }
             {!gameDone &&
-                <div className='w-80 h-80 ml-5'>
-                    {
-                        myTurn ? isDrawing ?
-                                <Link
-                                    href={{
-                                        pathname: `/canvas/${lastDrawing.id}`
-                                    }}
-                                > <Button className={'bg-blue-500 text-white h-20'}>{`Your turn to draw `} <Brush
-                                    size={30}/></Button></Link> :
-                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
-                                    className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}<Eye
-                                    size={30}/></Button></Link> :
-                            <div><UserTag userColors={userColors} name={curPlayer}/>
-                                <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
-                    }
-
-                </div>
+            <div className='w-80 h-80 ml-5'><UserTag userColors={userColors} name={curPlayer}/>
+                <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
             }
-            <div className='w-80 h-80 ml-5'>{nextPlayer && <span><UserTag userColors={userColors} name={nextPlayer}/> {` is ${isGuessing? "drawing": "guessing"} next`}</span>}</div>
+            <div className='w-80 h-80 ml-5'>{nextPlayer && <span><UserTag userColors={userColors}
+                                                                          name={nextPlayer}/>
+                {` is ${isGuessing ? "drawing" : "guessing"} next`}</span>}</div>
         </div>
     )
 }
 
-function UserTag({userColors, name}:{userColors:{[name:string]: string }, name:string}) {
+function UserTag({userColors, name}: { userColors: { [name: string]: string }, name: string }) {
     return (<span className={userColors[name]}><strong>{name}</strong></span> )
 }
