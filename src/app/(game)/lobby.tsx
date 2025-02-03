@@ -49,7 +49,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
     const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx],  ...prev}), {});
     return (<div className={"ml-5  container"}>
             <div className={'flex flex-row'}>
-                {roomies.length > 1 && <Button className={'mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>}
+                {Object.keys(games).length > 0 || roomies.length > 1 && <Button className={'mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>}
                 {Object.keys(games).length === 0 && roomies.length > 1 && <Button onClick={handleNewGameClick}>Start Game</Button>}
             </div>
 
