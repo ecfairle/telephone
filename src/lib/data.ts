@@ -226,6 +226,17 @@ export async function fetchGames(user_id:string, room_id:string) {
     }
 }
 
+export async function getRoomById(room_id:string) {
+    try {
+        const data = await sql<User>`
+            SELECT u.* from users u where room_id=${room_id}`;
+        return data.rows;
+    } catch(error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch room');
+    }
+}
+
 export async function getRoom(user_id:string) {
     try {
         const data = await sql`

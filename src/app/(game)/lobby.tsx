@@ -1,11 +1,12 @@
 'use client'
-import ListGame from "@/app/game_list";
-import NewGame from "./new_game";
+import GamePanels from "@/app/(game)/game_panels";
 import ShareLink from "@/app/(game)/share_link";
-import LeaveRoom from "@/app/(game)/leave_room";
-import {getRoomData} from "@/lib/api";
-import {useEffect, useState} from "react";
+import {getRoomData, leaveRoom, startNewGame} from "@/lib/api";
+import React, {useEffect, useState} from "react";
 import {User} from "@/lib/data_definitions";
+import {Button} from "@/components/button";
+import {useRouter} from "next/navigation";
+import {useSession} from "next-auth/react";
 
 const colors = [
     'text-blue-500', 'text-red-500', 'text-green-500', 'text-amber-500', 'text-violet-500'
@@ -30,13 +31,30 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
         const intervalId = setInterval(fetchRoomData, 5000); // Fetch every 5 seconds
 
         return () => clearInterval(intervalId); // Cleanup on unmount
-    }, [])
+    }, []);
+
+    async function handleNewGameClick() {
+        await startNewGame(roomId);
+        router.refresh();
+    }
+
+    async function handleLeaveRoomClick() {
+        await leaveRoom(session?.data?.user.userId as string);
+        router.refresh();
+    }
+
+    const router = useRouter();
+    const session = useSession();
+
     const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx],  ...prev}), {});
     return (<div className={"ml-5  container"}>
-            {roomies.length > 1 && <LeaveRoom/>}
+            <div className={'flex flex-row'}>
+                {roomies.length > 1 && <Button className={'mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>}
+                {Object.keys(games).length === 0 && roomies.length > 1 && <Button onClick={handleNewGameClick}>Start Game</Button>}
+            </div>
+
             {Object.keys(games).length === 0 ?
                 <div className={"flex-row"}>
-                    {roomies.length > 1 && <NewGame roomId={roomId}/>}
                     <div className={"flex flex-col"}>
                         {roomies.map((user) => {
                             return(
@@ -54,7 +72,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                 <div className={'flex flex-col mt-10'}>
                     {Object.entries(games).map((game, idx) => (
                         <div key={idx}>
-                            <ListGame userColors={userColors} userId={userId} gameId={game[0]}/>
+                            <GamePanels userColors={userColors} userId={userId} gameId={game[0]}/>
                         </div>
                     ))}
                 </div>

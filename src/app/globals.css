@@ -12,13 +12,6 @@
   src: url("fonts/Misko-AR4z6.woff");
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #ededed;
-    --foreground: #0a0a0a;
-  }
-}
-
 body {
   color: var(--foreground);
   background: var(--background);

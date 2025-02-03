@@ -7,7 +7,7 @@ import {Button} from "@/components/button";
 import {Brush, Eye} from "lucide-react";
 
 
-export default function ListGame ({userColors, userId, gameId} : {userColors: {[name:string]: string }, userId: string, gameId: string}) {
+export default function GamePanels ({userColors, userId, gameId} : {userColors: {[name:string]: string }, userId: string, gameId: string}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
@@ -54,6 +54,9 @@ export default function ListGame ({userColors, userId, gameId} : {userColors: {[
     if (drawings.length === 0) {
         return null;
     }
+    const drawingsById : {[id: string]: GameDrawing} = drawings.reduce((prev, cur) => {
+        return {...prev, [cur.id]: cur}
+    }, {})
     const lastDrawing = drawings[0];
     const firstDrawing = drawings.slice(-1)[0];
     const alreadyFinished = turns.some((turn) =>
@@ -82,12 +85,12 @@ export default function ListGame ({userColors, userId, gameId} : {userColors: {[
                                                                                 name={firstDrawing.drawer_name}/>{`'s drawing`}
             </div>
             {!myTurn || gameDone ?
-
-                alreadyFinished ?
+                <div className={"flex flex-row"}>
+                    {alreadyFinished &&
                 <GameOverview userColors={userColors} firstDrawing={firstDrawing} gameDone={gameDone} alreadyFinished={alreadyFinished}
-                              turns={turns} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer}/>
-                :
-                <GameOverviewPrePlay userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer}/>
+                              turns={turns} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer}/>}
+                <GameOverviewPrePlay userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} gameDone={gameDone}/>
+                </div>
                 :
                 <div className='w-40 h-40 ml-3'>
                     {
@@ -96,11 +99,10 @@ export default function ListGame ({userColors, userId, gameId} : {userColors: {[
                                     href={{
                                         pathname: `/canvas/${lastDrawing.id}`
                                     }}
-                                > <Button className={'bg-blue-500 text-white h-20'}>{`Your turn to draw `} <br/> <Brush
+                                > <Button className={'bg-blue-500 text-white h-20'}>{lastDrawing.guesser_name === null ?`Draw your word!` : `Draw ${lastDrawing.guesser_name}'s guess`} <Brush
                                     size={30}/></Button></Link> :
                                 <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
-                                    className={'bg-blue-500 text-white h-20'}>{`Your turn to guess`}<Eye
-                                    size={30}/></Button></Link> :
+                                    className={'bg-blue-500 text-white h-20'}>{`Guess ${drawingsById[lastDrawing.prev_game_drawing_id].drawer_name}'s drawing! `}</Button></Link> :
                             <div><UserTag userColors={userColors} name={curPlayer}/>
                                 <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
                     }
@@ -111,18 +113,21 @@ export default function ListGame ({userColors, userId, gameId} : {userColors: {[
         </div>
     )
 }
-function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer} : {userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string}) {
+function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer, gameDone} : {gameDone: boolean, userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string}) {
     return (<div className={'inline-flex'}>
+        {!gameDone ?
         <div className='w-40 h-40 ml-3'><UserTag userColors={userColors} name={curPlayer}/>
-            <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p>
+            {`'s turn`}
+            <br/>
             <br/>
             {nextPlayer && <span><UserTag userColors={userColors}
                                           name={nextPlayer}/>
                 {` is ${isGuessing ? "drawing" : "guessing"} next`}</span>}</div>
+            :null}
     </div>)
 }
 
-function GameOverview({userColors, firstDrawing, gameDone, alreadyFinished, turns, nextPlayer, isGuessing, curPlayer} :
+function GameOverview({userColors, firstDrawing, alreadyFinished, turns} :
     {userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string, firstDrawing:GameDrawing, gameDone: boolean, alreadyFinished:boolean, turns:(GameDrawing&{isDraw: boolean})[]}) {
     return (
         <div className={"inline-flex"}>
@@ -143,13 +148,6 @@ function GameOverview({userColors, firstDrawing, gameDone, alreadyFinished, turn
                         <p>{`guessed${alreadyFinished ? ` ${turn.target_word}` : ""}`}</p></div>)
                 })
             }
-            {!gameDone &&
-            <div className='w-80 h-80 ml-5'><UserTag userColors={userColors} name={curPlayer}/>
-                <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
-            }
-            <div className='w-80 h-80 ml-5'>{nextPlayer && <span><UserTag userColors={userColors}
-                                                                          name={nextPlayer}/>
-                {` is ${isGuessing ? "drawing" : "guessing"} next`}</span>}</div>
         </div>
     )
 }

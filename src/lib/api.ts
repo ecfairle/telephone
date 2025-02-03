@@ -109,3 +109,13 @@ export async function getRoomData() {
         },
     })
 }
+
+export async function getRoomById(room_id:string) {
+    return await fetch(`/room/${room_id}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+    })
+}

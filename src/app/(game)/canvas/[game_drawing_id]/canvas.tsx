@@ -25,7 +25,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
     console.log('user id' + session?.data?.user?.userId)
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const tempCanvasRef = useRef<HTMLCanvasElement>(null);
-    const [strokeColor, setStrokeColor] = useState('#4fab50')
+    const [strokeColor, setStrokeColor] = useState('#000000')
     const [strokeWidth, setStrokeWidth] = useState(4)
     const [eraseMode, setEraseMode] = useState(false)
     const [word] = useState(secretWord);

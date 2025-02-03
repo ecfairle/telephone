@@ -1,10 +1,10 @@
 import * as React from "react";
 import {ReactNode, useRef, useState} from "react";
 import {Overlay} from "@restart/ui";
-import {Button} from "@/components/button";
+import {Button, ButtonProps} from "@/components/button";
 import {clsx} from "clsx";
 
-interface ButtonOverlayProps {
+interface ButtonOverlayProps extends ButtonProps {
     // other props
     children?: ReactNode;
     overlayText?: string;
@@ -44,10 +44,10 @@ export default function ButtonOverlay({children, overlayText, ...props}: ButtonO
                                             style={arrowProps.style}
                                             className={clsx(
                                                 "absolute w-3 h-3 z-[-1]",
-                                                "before:absolute before:rotate-45 before:bg-black before:top-0 before:left-0 before:w-3 before:h-3",
+                                                "before:absolute before:rotate-45 before:bg-blue-500 before:top-0 before:left-0 before:w-3 before:h-3",
                                             )}
                                         />
-                                        <div className="py-1 px-2 text-center rounded bg-black text-white ">
+                                        <div className="py-1 px-2 text-center rounded bg-blue-500 text-white ">
                                             {overlayText}
                                         </div>
                                 </div>
