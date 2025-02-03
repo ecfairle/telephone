@@ -1,6 +1,4 @@
-import {fetchGames, getRoom, getRoomById} from "@/lib/data";
-import {getServerSession} from "next-auth";
-import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
+import {getRoomById} from "@/lib/data";
 import {User} from "@/lib/data_definitions";
 
 

@@ -1,6 +1,6 @@
 'use client'
 import {Button} from "@/components/button";
-import {getRoomById, getRoomData, joinRoom} from '@/lib/api'
+import {getRoomById, joinRoom} from '@/lib/api'
 import {redirect} from "next/navigation";
 import {useEffect, useState} from "react";
 import {User} from "@/lib/data_definitions";
@@ -44,7 +44,7 @@ export default function JoinRoom({userId, roomId} : {userId:string, roomId: stri
                                 }
                                 return;
                             }
-                        } catch (error) {
+                        } catch {
                             setError('Failed to join room');
                             return;
                         }

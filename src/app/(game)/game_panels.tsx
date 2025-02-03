@@ -4,7 +4,7 @@ import Link from "next/link";
 import {useEffect, useState} from "react";
 import {getGame} from "@/lib/api";
 import {Button} from "@/components/button";
-import {Brush, Eye} from "lucide-react";
+import {Brush} from "lucide-react";
 
 
 export default function GamePanels ({userColors, userId, gameId} : {userColors: {[name:string]: string }, userId: string, gameId: string}) {
