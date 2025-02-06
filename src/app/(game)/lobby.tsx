@@ -28,9 +28,10 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
             }
         }
         fetchRoomData();
-        const intervalId = setInterval(fetchRoomData, 5000); // Fetch every 5 seconds
+        // TODO: restart polling
+        // const intervalId = setInterval(fetchRoomData, 60000 * 5); // Fetch every 5 seconds
 
-        return () => clearInterval(intervalId); // Cleanup on unmount
+        // return () => clearInterval(intervalId); // Cleanup on unmount
     }, []);
 
     async function handleNewGameClick() {
