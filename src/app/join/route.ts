@@ -10,10 +10,10 @@ export async function POST(
     const userId = loadedParams.user_id;
     const roomId = loadedParams.room_id;
     const roomies = await getRoomies(roomId);
-    if (roomies.rows.length === 0) {
+    if (roomies.length === 0) {
         return Response.json("Room not found", {status: 404})
     }
-    if (roomies.rows.length >= MAX_PEOPLE_PER_ROOM) {
+    if (roomies.length >= MAX_PEOPLE_PER_ROOM) {
         return Response.json("Too many users in room", {status: 400})
     }
     const res = await joinRoom(userId, roomId);

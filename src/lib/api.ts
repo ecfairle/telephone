@@ -13,7 +13,7 @@ export async function joinRoom(userId:string, roomId:string) {
     return res;
 }
 
-export async function leaveRoom(userId:string) {
+export async function leaveRoom(userId:string, roomId:string) {
     const res = await fetch(`/leave`, {
         method: 'POST',
         headers: {
@@ -21,6 +21,7 @@ export async function leaveRoom(userId:string) {
             'Accept': 'application/json',
         },
         body: JSON.stringify({
+            room_id: roomId,
             user_id: userId
         })
     });

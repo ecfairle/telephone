@@ -26,8 +26,7 @@ export default function GamePanels ({userColors, userId, gameId} : {userColors: 
             } catch {
 
             } finally {
-                // TODO: restart polling
-                // setTimeout(fetchGameData, 5000);
+                setTimeout(fetchGameData, 5000);
             }
         }
         fetchGameData();

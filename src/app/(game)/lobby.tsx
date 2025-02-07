@@ -1,7 +1,7 @@
 'use client'
 import GamePanels from "@/app/(game)/game_panels";
 import ShareLink from "@/app/(game)/share_link";
-import {getRoomData, leaveRoom, startNewGame} from "@/lib/api";
+import {getRoomById, leaveRoom, startNewGame} from "@/lib/api";
 import React, {useEffect, useState} from "react";
 import {User} from "@/lib/data_definitions";
 import {Button} from "@/components/button";
@@ -19,7 +19,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
     useEffect(() => {
         const fetchRoomData = async () => {
             try {
-                const res = await getRoomData();
+                const res = await getRoomById(roomId);
                 const result : {games: { [game_id: string]: {name: string}[] }, roomies: User[], room_id: string} = await res.json();
                 setGames(result['games']);
                 setRoomies(result['roomies']);
@@ -28,11 +28,10 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
             }
         }
         fetchRoomData();
-        // TODO: restart polling
-        // const intervalId = setInterval(fetchRoomData, 60000 * 5); // Fetch every 5 seconds
+        const intervalId = setInterval(fetchRoomData, 5000); // Fetch every 5 seconds
 
-        // return () => clearInterval(intervalId); // Cleanup on unmount
-    }, []);
+        return () => clearInterval(intervalId); // Cleanup on unmount
+    }, [roomId]);
 
     async function handleNewGameClick() {
         await startNewGame(roomId);
@@ -40,7 +39,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
     }
 
     async function handleLeaveRoomClick() {
-        await leaveRoom(session?.data?.user.userId as string);
+        await leaveRoom(session?.data?.user.userId as string, roomId);
         router.refresh();
     }
 
@@ -50,7 +49,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
     const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx],  ...prev}), {});
     return (<div className={"ml-5  container"}>
             <div className={'flex flex-row'}>
-                {Object.keys(games).length > 0 || roomies.length > 1 && <Button className={'mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>}
+                {(Object.keys(games).length > 0 || roomies.length > 1) && <Button className={'mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>}
                 {Object.keys(games).length === 0 && roomies.length > 1 && <Button onClick={handleNewGameClick}>Start Game</Button>}
             </div>
 

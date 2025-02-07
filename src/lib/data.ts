@@ -6,6 +6,7 @@ import {
 } from './data_definitions';
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
+import client from "@/lib/redis";
 
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
@@ -50,6 +51,7 @@ export async function reserveGameDrawing(game_drawing_id:string, user_id:string)
 
 export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
     try {
+        // TODO: shouldn't need to do updates here anymore
         const data = await sql<GameDrawing>`
             SELECT game_drawings.* FROM game_drawings
             WHERE game_drawings.id = ${game_drawing_id}
@@ -98,6 +100,7 @@ export async function setDrawingDone(game_drawing_id:string) {
         if (drawing === null) {
             throw new Error('Drawing already set or invalid id');
         }
+        await client.del('game_drawings_' + drawing.game_id);
         const nextPlayer = await nextPlayerByGame(drawing.game_id);
         if (nextPlayer === null) {
             // no more players
@@ -105,8 +108,7 @@ export async function setDrawingDone(game_drawing_id:string) {
         }
         await sql<GameDrawing>`
         INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
-        VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id})`
-
+        VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id}) RETURNING *`
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to update game_drawings record.');
@@ -171,6 +173,7 @@ export async function setGuess(game_drawing_id:string, guess: string) {
         if (gameDrawing.target_word !== null) {
             throw new Error(`Guess already set`);
         }
+        await client.del('game_drawings_' + gameDrawing.game_id);
 
         const nextPlayer = await nextPlayerByGame(gameDrawing.game_id);
         const nextPlayerId = nextPlayer? nextPlayer.id : null;
@@ -200,6 +203,11 @@ export async function addDrawer(user_id:string, game_drawing_id:string) {
 
 export async function fetchGames(user_id:string, room_id:string) {
     try {
+        const cachedGames = await client.get('room_games_' + room_id);
+        if (cachedGames !== null) {
+            console.log('cache hit for games in room: ' + room_id)
+            return JSON.parse(cachedGames);
+        }
         const data = await sql`
             SELECT g.game_id, users.name FROM game_users g
                 JOIN users original_user on g.user_id = original_user.id
@@ -219,21 +227,11 @@ export async function fetchGames(user_id:string, room_id:string) {
                 }
             }, {}
         )
+        await client.set('room_games_'+room_id, JSON.stringify(result));
         return result;
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
-    }
-}
-
-export async function getRoomById(room_id:string) {
-    try {
-        const data = await sql<User>`
-            SELECT u.* from users u where room_id=${room_id}`;
-        return data.rows;
-    } catch(error) {
-        console.error('Database Error:', error);
-        throw new Error('Failed to fetch room');
     }
 }
 
@@ -281,7 +279,14 @@ export async function readWordList() {
 
 export async function getRoomies(room_id:string) {
     try {
-        return await sql`SELECT * FROM users WHERE room_id=${room_id}`;
+        const cachedUsers = await client.get('roomies_' + room_id);
+        if (cachedUsers !== null) {
+            console.log('cache hit for room: '+ room_id);
+            return JSON.parse(cachedUsers);
+        }
+        const users = await sql`SELECT * FROM users WHERE room_id=${room_id}`;
+        await client.set('roomies_' + room_id, JSON.stringify(users.rows));
+        return users.rows;
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
@@ -291,6 +296,7 @@ export async function getRoomies(room_id:string) {
 export async function joinRoom(user_id:string, room_id:string) {
     try {
         const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id} RETURNING *`;
+        await client.del('roomies_' + room_id);
         return res.rows.length > 0 ? res.rows[0] : null;
     } catch (error) {
         console.error('Database Error:', error);
@@ -298,10 +304,12 @@ export async function joinRoom(user_id:string, room_id:string) {
     }
 }
 
-export async function leaveRoom(user_id:string) {
+export async function leaveRoom(user_id:string, room_id:string) {
     try {
         const res = await sql`UPDATE users SET room_id = null where id=${user_id} RETURNING *`;
-        return res.rows.length > 0 ? res.rows[0] : null;
+        const user = res.rows.length > 0 ? res.rows[0] : null;
+        await client.del('roomies_' + room_id);
+        return user;
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
@@ -310,6 +318,7 @@ export async function leaveRoom(user_id:string) {
 
 export async function startNewGameForRoom(room_id:string) {
     try {
+        await client.del('room_games_' + room_id);
         const gamesData = await sql<Game>`SELECT * from games where room_id=${room_id}
                                                             AND play_date=(current_timestamp at time zone 'PST')::date`;
         if (gamesData.rows.length > 0) {
@@ -366,7 +375,39 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
         if (gameIds.length === 0) {
             return {drawings: {}, nextPlayers: {}};
         }
-        const data:QueryResult<GameDrawing>[] = await Promise.all(gameIds.map(async (gameId) => await sql<GameDrawing>`
+
+        const values = await Promise.all(gameIds.map(async (gameId) =>
+
+            ({game_id: gameId, data: await client.get('game_drawings_' + gameId)})));
+
+        const cachedDrawings = await Promise.all(values.
+        filter((v) => v['data'] !== null).
+        map((v) => ({...v, data: JSON.parse(v['data'] as string)})).
+        map(
+            // update signed urls
+            async (v) => (
+            {   ...v,
+                ...v['data'],
+                game_drawings: await Promise.all(v['data']['game_drawings'].map(
+                    async (d:GameDrawing) => ({...d, signed_url: await getSignedUrl(d.id)})))})));
+
+        const cachedDrawingsByGameId = cachedDrawings.reduce((prev, v) => (v['data'] ? {
+            ...prev, [v.game_id]: v.game_drawings
+        } : prev), {});
+        const cachedNextPlayersByGameId = cachedDrawings.reduce((prev, v) => (v['data'] ? {
+            ...prev, [v.game_id]: v.next_players
+        } : prev), {});
+
+        for (const drawings of cachedDrawings) {
+            console.log('cache hit for game: ', drawings['game_id']);
+        }
+
+        const uncachedGameIds = gameIds.filter((gameId) => !Object.keys(cachedDrawingsByGameId).includes(gameId));
+        if (uncachedGameIds.length === 0) {
+            return {drawings: cachedDrawingsByGameId, nextPlayers: cachedNextPlayersByGameId};
+        }
+
+        const data:QueryResult<GameDrawing>[] = await Promise.all(uncachedGameIds.map(async (gameId) => await sql<GameDrawing>`
             SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name FROM game_drawings 
                     LEFT JOIN users guesser on guesser.id = game_drawings.guesser_id
                     LEFT JOIN users drawer on drawer.id = game_drawings.drawer_id
@@ -405,12 +446,26 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             }
         }, {});
 
-        const nextPlayers = await Promise.all(gameIds.map(async (gameId) =>
+        const nextPlayers = await Promise.all(uncachedGameIds.map(async (gameId) =>
             ({gameId, nextPlayer: await nextPlayerByGame(gameId)})));
 
-        const nextPlayersByGame = nextPlayers.reduce((prev, cur) =>
+        const nextPlayersByGame:{[game_id: string]: User} = nextPlayers.reduce((prev, cur) =>
             ({...prev, [cur.gameId]: cur.nextPlayer}), {});
-        return {drawings: gameDrawings, nextPlayers: nextPlayersByGame};
+
+        for (const gameId of uncachedGameIds) {
+            await client.set('game_drawings_' + gameId, JSON.stringify({
+                next_players: nextPlayersByGame[gameId],
+                game_drawings: gameDrawings[gameId]
+            }));
+        }
+        return {drawings: {
+            ...cachedDrawingsByGameId,
+            ...gameDrawings
+            }, nextPlayers: {
+                ...cachedNextPlayersByGameId,
+                ...nextPlayersByGame
+            }
+            };
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
