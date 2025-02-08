@@ -2,6 +2,7 @@
 import {signIn, useSession} from "next-auth/react";
 import {useEffect} from "react";
 import {useSearchParams} from "next/navigation";
+import {Button} from "@/components/button"
 
 export default function LoginPage() {
 
@@ -16,16 +17,16 @@ export default function LoginPage() {
     const callbackUrl = searchParams.has('room_id')? `/join_room/${searchParams.get('room_id')}`: '/';
     console.log('CALLBACK', callbackUrl)
     return (
-        <div>
-            <p>Login to access your account</p>
+        <div className={'m-5 flex flex-col max-w-64'}>
+            <p className={'m-5'}>Login to access your account</p>
 
-            <button onClick={() => signIn('discord', {callbackUrl: callbackUrl})}>
+            <Button onClick={() => signIn('discord', {callbackUrl: callbackUrl})}>
                 Login with Discord
-            </button>
+            </Button>
             <br/>
-            <button onClick={() => signIn('google', {callbackUrl: callbackUrl})}>
+            <Button onClick={() => signIn('google', {callbackUrl: callbackUrl})}>
                 Login with Google
-            </button>
+            </Button>
         </div>
     );
 }
