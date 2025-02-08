@@ -7,6 +7,7 @@ import {
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
 import client from "@/lib/redis";
+import { format, toZonedTime } from 'date-fns-tz';
 
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
@@ -100,7 +101,6 @@ export async function setDrawingDone(game_drawing_id:string) {
         if (drawing === null) {
             throw new Error('Drawing already set or invalid id');
         }
-        await client.del('game_drawings_' + drawing.game_id);
         const nextPlayer = await nextPlayerByGame(drawing.game_id);
         if (nextPlayer === null) {
             // no more players
@@ -109,6 +109,7 @@ export async function setDrawingDone(game_drawing_id:string) {
         await sql<GameDrawing>`
         INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
         VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id}) RETURNING *`
+        await client.del('game_drawings_' + drawing.game_id + dateAtPST());
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to update game_drawings record.');
@@ -173,7 +174,6 @@ export async function setGuess(game_drawing_id:string, guess: string) {
         if (gameDrawing.target_word !== null) {
             throw new Error(`Guess already set`);
         }
-        await client.del('game_drawings_' + gameDrawing.game_id);
 
         const nextPlayer = await nextPlayerByGame(gameDrawing.game_id);
         const nextPlayerId = nextPlayer? nextPlayer.id : null;
@@ -181,6 +181,7 @@ export async function setGuess(game_drawing_id:string, guess: string) {
         UPDATE game_drawings SET target_word=${guess},
                              drawer_id=${nextPlayerId}
         WHERE game_drawings.id = ${game_drawing_id}`;
+        await client.del('game_drawings_' + gameDrawing.game_id + dateAtPST());
 
     } catch (error) {
         console.error('Database Error:', error);
@@ -203,7 +204,7 @@ export async function addDrawer(user_id:string, game_drawing_id:string) {
 
 export async function fetchGames(user_id:string, room_id:string) {
     try {
-        const cachedGames = await client.get('room_games_' + room_id);
+        const cachedGames = await client.get('room_games_' + room_id + dateAtPST());
         if (cachedGames !== null) {
             console.log('cache hit for games in room: ' + room_id)
             return JSON.parse(cachedGames);
@@ -227,7 +228,7 @@ export async function fetchGames(user_id:string, room_id:string) {
                 }
             }, {}
         )
-        await client.set('room_games_'+room_id, JSON.stringify(result));
+        await client.set('room_games_' + room_id + dateAtPST(), JSON.stringify(result));
         return result;
     } catch (error) {
         console.error('Database Error:', error);
@@ -316,9 +317,15 @@ export async function leaveRoom(user_id:string, room_id:string) {
     }
 }
 
+function dateAtPST(dateFormat: string = 'yyyy-MM-dd') {
+    const now = new Date();
+    const timeZone = 'America/Los_Angeles';
+    const zonedDate = toZonedTime(now, timeZone);
+    return format(zonedDate, dateFormat, { timeZone: timeZone });
+}
+
 export async function startNewGameForRoom(room_id:string) {
     try {
-        await client.del('room_games_' + room_id);
         const gamesData = await sql<Game>`SELECT * from games where room_id=${room_id}
                                                             AND play_date=(current_timestamp at time zone 'PST')::date`;
         if (gamesData.rows.length > 0) {
@@ -336,8 +343,6 @@ export async function startNewGameForRoom(room_id:string) {
 
         const wordList = await readWordList();
         const todayDateString = data.rows[0].today;
-        console.log('today? ' + todayDateString);
-        // console.log(wordList);
         const todaysWords = wordList[todayDateString]
         // Shuffle array
         const shuffled = todaysWords.sort(() => 0.5 - Math.random());
@@ -362,6 +367,7 @@ export async function startNewGameForRoom(room_id:string) {
             await sql`INSERT INTO game_drawings (game_id, target_word, drawing_done, drawer_id)
                         VALUES (${newGameId}, ${word}, false, ${users[i]})`
             i++;
+            await client.del('room_games_' + room_id + dateAtPST());
         }
 
     } catch (error) {
@@ -378,7 +384,7 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
 
         const values = await Promise.all(gameIds.map(async (gameId) =>
 
-            ({game_id: gameId, data: await client.get('game_drawings_' + gameId)})));
+            ({game_id: gameId, data: await client.get('game_drawings_' + gameId + dateAtPST())})));
 
         const cachedDrawings = await Promise.all(values.
         filter((v) => v['data'] !== null).
@@ -453,7 +459,7 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             ({...prev, [cur.gameId]: cur.nextPlayer}), {});
 
         for (const gameId of uncachedGameIds) {
-            await client.set('game_drawings_' + gameId, JSON.stringify({
+            await client.set('game_drawings_' + gameId + dateAtPST(), JSON.stringify({
                 next_players: nextPlayersByGame[gameId],
                 game_drawings: gameDrawings[gameId]
             }));
