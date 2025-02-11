@@ -17,16 +17,30 @@ export default function LoginPage() {
     const callbackUrl = searchParams.has('room_id')? `/join_room/${searchParams.get('room_id')}`: '/';
     console.log('CALLBACK', callbackUrl)
     return (
-        <div className={'m-5 flex flex-col max-w-64'}>
-            <p className={'m-5'}>Login to access your account</p>
-
-            <Button onClick={() => signIn('discord', {callbackUrl: callbackUrl})}>
+        <div className={'m-5 flex text-center justify-center '}>
+            <div className={'max-w-80 '}>
+            <p className={'m-5'}>Log in to play</p>
+            <div className={'flex flex-col items-center position-relative'}>
+            <Button type='button'
+                    variant='outline' className={'w-64 h-12'} onClick={() => signIn('discord', {callbackUrl: callbackUrl})}>
                 Login with Discord
             </Button>
             <br/>
-            <Button onClick={() => signIn('google', {callbackUrl: callbackUrl})}>
+            <Button type='button'
+                    variant='outline' className={'w-64 h-12'} onClick={() => signIn('google', {callbackUrl: callbackUrl})}>
                 Login with Google
             </Button>
+            </div>
+            <div className={'border border-black text-center justify-center mt-5 p-2'}>
+                <h2>How to play:</h2>
+                <br/>
+                Join a room with 1-4 friends to play. Every day there are a new set of words. When you start the game,
+                a word will be randomly assigned to each player. <br/>For each word, the first player will draw that word. Then, the next
+                player in order will guess the
+                first player's drawing, and the next player will draw the second player's guess. And so on. At the end,
+                see how the original word morphed being passed between everyone!
+            </div>
+            </div>
         </div>
     );
 }
