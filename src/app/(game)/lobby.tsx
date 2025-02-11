@@ -79,7 +79,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                         a word will be randomly assigned to each player. <br/>For each word, the first player will draw
                         that word. Then, the next
                         player in order will guess the
-                        first player's drawing, and the next player will draw the second player's guess. And so on. At
+                        first player&apos;s drawing, and the next player will draw the second player&apos;s guess. And so on. At
                         the end,
                         see how the original word morphed being passed between everyone!
                     </div>
