@@ -101,16 +101,17 @@ export async function setDrawingDone(game_drawing_id:string) {
         if (drawing === null) {
             throw new Error('Drawing already set or invalid id');
         }
-        await client.del('game_drawings_' + drawing.game_id + dateAtPST());
 
         const nextPlayer = await nextPlayerByGame(drawing.game_id);
         if (nextPlayer === null) {
             // no more players
+            await client.del('game_drawings_' + drawing.game_id + dateAtPST());
             return null;
         }
         await sql<GameDrawing>`
         INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
         VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id}) RETURNING *`
+        await client.del('game_drawings_' + drawing.game_id + dateAtPST());
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to update game_drawings record.');
