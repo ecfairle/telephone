@@ -48,7 +48,7 @@ export default function JoinRoom({userId, roomId} : {userId:string, roomId: stri
                             setError('Failed to join room');
                             return;
                         }
-                        redirect('/');
+                        redirect(`/room/${roomId}`);
                     }}>Join Room</Button>
                 </div>
                 : null}
