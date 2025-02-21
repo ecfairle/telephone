@@ -25,11 +25,11 @@ export default function GamePanels ({userColors, userId, gameId} : {userColors: 
                 else setNextPlayer(null);
             } catch {
 
-            } finally {
-                setTimeout(fetchGameData, 5000);
             }
         }
         fetchGameData();
+        const intervalId = setInterval(fetchGameData, 5000); // Fetch every 5 seconds
+        return () => clearInterval(intervalId); // Cleanup on unmount
         }, [gameId])
 
     for (const drawing of drawings) {

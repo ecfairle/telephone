@@ -102,7 +102,7 @@ export async function getGame(game_id:string) {
 }
 
 export async function getRoomData() {
-    return await fetch(`/room`, {
+    return await fetch(`/get_room`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -112,11 +112,24 @@ export async function getRoomData() {
 }
 
 export async function getRoomById(room_id:string) {
-    return await fetch(`/room/${room_id}`, {
+    return await fetch(`/get_room/${room_id}`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
+    })
+}
+
+export async function createRoom(user_id:string) {
+    return await fetch(`/create_room`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id
+        })
     })
 }

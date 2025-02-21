@@ -196,7 +196,29 @@ CREATE TABLE rooms (
     id UUID DEFAULT uuid_generate_v4() NOT NULL,
     created_at TIMESTAMPTZ NOT NULL default current_timestamp,
     PRIMARY KEY (id)
-)`
+)
+
+CREATE TABLE user_rooms (
+    user_id UUID NOT NULL REFERENCES users,
+    room_id UUID NOT NULL REFERENCES rooms,
+    UNIQUE (room_id, user_id)
+)
+
+CREATE TABLE words (
+    id SERIAL NOT NULL,
+    word VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id),
+    created_at TIMESTAMPTZ NOT NULL default current_timestamp,
+    UNIQUE(word)
+)
+
+CREATE TABLE used_words (
+    room_id UUID NOT NULL REFERENCES rooms,
+    word_id SERIAL NOT NULL REFERENCES words,
+    created_at TIMESTAMPTZ NOT NULL default current_timestamp,
+    UNIQUE(room_id, word_id)
+)
+`
     await Promise.all(
         rooms.map(async (room) => {
             return client.sql`

@@ -3,7 +3,7 @@ import {getServerSession} from "next-auth";
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
 import {redirect} from "next/navigation";
 import JoinRoom from "./join";
-import {getRoom} from "@/lib/data";
+import {getRooms} from "@/lib/data";
 
 export const metadata: Metadata = {
     title: 'Join Room',
@@ -21,8 +21,9 @@ export default async function Page({
     }
     console.log('room id ?' + roomId)
     const userId = session.user.userId;
-    const {'room_id': curRoomId} = await getRoom(userId);
-    if (curRoomId === roomId) {
+    const roomsData = await getRooms(userId);
+    const inRoom = roomsData.some((room) => room.room_id === roomId);
+    if (inRoom) {
         return redirect('/');
     }
     return (

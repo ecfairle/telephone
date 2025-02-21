@@ -7,6 +7,7 @@ import {User} from "@/lib/data_definitions";
 import {Button} from "@/components/button";
 import {useRouter} from "next/navigation";
 import {useSession} from "next-auth/react";
+import GameBlurb from "@/app/(game)/game_blurb";
 
 const colors = [
     'text-blue-500', 'text-red-500', 'text-green-500', 'text-amber-500', 'text-violet-500'
@@ -42,16 +43,16 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
 
     async function handleLeaveRoomClick() {
         await leaveRoom(session?.data?.user.userId as string, roomId);
-        router.refresh();
+        router.push('/');
     }
 
     const router = useRouter();
     const session = useSession();
 
     const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx],  ...prev}), {});
-    return (<div className={"flex flex-col container p-5"}>
+    return (<div className={"flex flex-col container"}>
             <div className={''}>
-                {(Object.keys(games).length > 0 || roomies.length > 1) && <Button className={'mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>}
+                 <Button className={'text-white bg-red-500 mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>
                 {Object.keys(games).length === 0 && <Button disabled={!startGameEnabled} onClick={handleNewGameClick}>Start Game</Button>}
             </div>
 
@@ -71,18 +72,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                             </div>
                         ))}
                     </div>
-                    <div className={'border border-black text-center justify-center mt-5 p-2'}>
-                        <h2>How to play:</h2>
-                        <br/>
-                        Join a room with 1-4 friends to play. Every day there are a new set of words. When you start the
-                        game,
-                        a word will be randomly assigned to each player. <br/>For each word, the first player will draw
-                        that word. Then, the next
-                        player in order will guess the
-                        first player&apos;s drawing, and the next player will draw the second player&apos;s guess. And so on. At
-                        the end,
-                        see how the original word morphed being passed between everyone!
-                    </div>
+                    <GameBlurb/>
                 </div>
                 :
                 <div className={'flex flex-col mt-10'}>

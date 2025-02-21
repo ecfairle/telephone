@@ -238,30 +238,34 @@ export async function fetchGames(user_id:string, room_id:string) {
     }
 }
 
-export async function getRoom(user_id:string) {
+export async function createRoom(user_id:string) {
+    try {
+        const room_id = v4();
+        const data = await sql`INSERT INTO rooms (id) VALUES (${room_id}) returning *`;
+        await sql`INSERT INTO user_rooms (user_id, room_id) VALUES (${user_id}, ${room_id})`;
+        return data.rows.length > 0 ? data.rows[0] : null;
+    } catch(error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to create room.');
+    }
+}
+
+export async function getRooms(user_id: string) {
     try {
         const data = await sql`
-            SELECT u.room_id from users u where id=${user_id}`;
+            SELECT room_id from user_rooms join rooms on rooms.id=user_rooms.room_id
+            where user_rooms.user_id=${user_id} ORDER BY rooms.created_at`;
 
-        if (data.rows.length === 0) {
-            throw new Error('No user found.')
-        }
+        const roomIds = data.rows.map(row => row.room_id);
+        const roomData = Promise.all(roomIds.map(async roomId => {
+            const usersData = await sql<User>`SELECT * from USERS JOIN user_rooms on user_rooms.room_id = ${roomId} AND users.id=user_rooms.user_id`;
+            return {
+                'room_id': roomId,
+                'users': usersData.rows
+            }
+        }));
 
-        let room_id = data.rows[0].room_id;
-        if (room_id === null) {
-            // create new room with just one user
-            room_id = v4();
-            await sql`INSERT INTO rooms (id) VALUES (${room_id})`;
-            await sql`UPDATE users SET room_id=${room_id} WHERE id=${user_id}`;
-        }
-        const usersData = await sql<User>`SELECT * from USERS where room_id=${room_id}`;
-        const users = usersData.rows;
-
-
-        return {
-            'room_id': room_id,
-            'users': users
-        };
+        return roomData;
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
@@ -287,7 +291,8 @@ export async function getRoomies(room_id:string) {
             console.log('cache hit for room: '+ room_id);
             return JSON.parse(cachedUsers);
         }
-        const users = await sql`SELECT * FROM users WHERE room_id=${room_id}`;
+        const users = await sql`
+SELECT users.* FROM users JOIN user_rooms on user_rooms.room_id=${room_id} and user_rooms.user_id=users.id`;
         await client.set('roomies_' + room_id, JSON.stringify(users.rows));
         return users.rows;
     } catch (error) {
@@ -299,6 +304,7 @@ export async function getRoomies(room_id:string) {
 export async function joinRoom(user_id:string, room_id:string) {
     try {
         const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id} RETURNING *`;
+        await sql`INSERT INTO user_rooms (user_id,room_id) VALUES (${user_id},${room_id})`
         await client.del('roomies_' + room_id);
         return res.rows.length > 0 ? res.rows[0] : null;
     } catch (error) {
@@ -310,6 +316,7 @@ export async function joinRoom(user_id:string, room_id:string) {
 export async function leaveRoom(user_id:string, room_id:string) {
     try {
         const res = await sql`UPDATE users SET room_id = null where id=${user_id} RETURNING *`;
+        await sql`DELETE from user_rooms where user_id=${user_id} and room_id=${room_id}`;
         const user = res.rows.length > 0 ? res.rows[0] : null;
         await client.del('roomies_' + room_id);
         return user;
@@ -333,7 +340,8 @@ export async function startNewGameForRoom(room_id:string) {
         if (gamesData.rows.length > 0) {
             throw new Error('Game already played today');
         }
-        const data = await sql`SELECT *, TO_CHAR((current_timestamp at time zone 'PST')::date, 'YYYY-MM-DD') as today from users where room_id=${room_id}`;
+        const data = await sql`SELECT *, TO_CHAR((current_timestamp at time zone 'PST')::date, 'YYYY-MM-DD') as today 
+            from users join user_rooms on user_rooms.room_id=${room_id} and user_rooms.user_id=users.id`;
         if (data.rows.length === 1) {
             throw new Error('Empty room')
         }
@@ -342,16 +350,19 @@ export async function startNewGameForRoom(room_id:string) {
         }
 
         const users = data.rows.map((user) => user.id);
-
-        const wordList = await readWordList();
         const todayDateString = data.rows[0].today;
-        const todaysWords = wordList[todayDateString]
-        // Shuffle array
-        const shuffled = todaysWords.sort(() => 0.5 - Math.random());
+
+        const wordRows = await sql`SELECT * FROM words WHERE id not in (select word_id from used_words
+                                                    where room_id=${room_id}) ORDER BY RANDOM() limit ${users.length}`;
+
+        if (wordRows.rows.length < users.length) {
+            throw new Error('Out of words!');
+        }
+
 
         let i = 0;
         while (i < users.length) {
-            const word = shuffled[i];
+            const word = wordRows.rows[i].word;
             const gameUsers = users.slice(i, users.length).concat(users.slice(0, i));
             const newGameData = await sql`INSERT INTO games (original_word, play_date, room_id) VALUES (${word}, ${todayDateString}, ${room_id}) RETURNING *`
             if (newGameData.rows.length === 0) {
@@ -368,8 +379,9 @@ export async function startNewGameForRoom(room_id:string) {
             );
             await sql`INSERT INTO game_drawings (game_id, target_word, drawing_done, drawer_id)
                         VALUES (${newGameId}, ${word}, false, ${users[i]})`
-            i++;
+            await sql`INSERT INTO used_words (room_id, word_id) VALUES (${room_id}, ${wordRows.rows[i].id})`
             await client.del('room_games_' + room_id + dateAtPST());
+            i++;
         }
 
     } catch (error) {

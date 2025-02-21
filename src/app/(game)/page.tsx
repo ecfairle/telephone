@@ -1,8 +1,10 @@
-import {fetchGames, getRoom} from '@/lib/data';
+import {getRooms} from '@/lib/data';
 import {redirect} from "next/navigation";
 import {getServerSession} from "next-auth";
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
-import Lobby from "@/app/(game)/lobby";
+import RoomSelector from "@/app/(game)/room_selector";
+import React from "react";
+import GameBlurb from "@/app/(game)/game_blurb";
 
 export default async function Home() {
   // const params = await searchParams;
@@ -12,8 +14,16 @@ export default async function Home() {
   }
   const userId = session.user.userId;
 
-  const {'room_id': roomId, users} = await getRoom(userId);
-  const games = await fetchGames(userId, roomId);
-  return (<Lobby roomId={roomId} users={users} gamesMap={games} userId={userId} />
-    )
-    }
+  const userRooms = await getRooms(userId);
+  const roomId = userRooms.length > 0 ? userRooms[0].room_id : null;
+  if (roomId) {
+    return redirect(`/room/${roomId}`);
+  }
+  return (
+      <div>
+        <RoomSelector userRooms={userRooms} roomId={roomId}/>
+        No rooms to show.
+        <GameBlurb/>
+      </div>
+  )
+}
