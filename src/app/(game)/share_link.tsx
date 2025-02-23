@@ -4,7 +4,8 @@ import ButtonOverlay from "@/components/ButtonOverlay";
 
 export default function ShareLink({roomId, showTooltip}: {roomId: string, showTooltip: boolean}) {
     return (
-        <ButtonOverlay tooltipText={showTooltip? 'Invite friends to play' : undefined} overlayText={'Copied room link'} className='w-24 h-24 mt-10'
+        <ButtonOverlay tooltipText={showTooltip? 'Invite friends to play' : undefined} overlayText={'Copied room link'}
+                       className='w-12 h-12 mt-8'
                        variant={'blue'}
                        onClick={() => {
                            navigator.clipboard.writeText(

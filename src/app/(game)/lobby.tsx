@@ -61,7 +61,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                     <div className={""}>
                         {roomies.map((user) => {
                             return (
-                                <div key={user.id} className='w-24 h-24 mt-10 truncate'><UserTag userColors={userColors}
+                                <div key={user.id} className='w-24 h-18 mt-10 truncate'><UserTag userColors={userColors}
                                                                                                  name={user.name}/>
                                     <img className={'w-12 h-12'} src={user.image}/>
                                 </div>)
@@ -75,7 +75,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                     <GameBlurb/>
                 </div>
                 :
-                <div className={'flex flex-col mt-10'}>
+                <div className={'flex flex-col mt-8'}>
                     {Object.entries(games).map((game, idx) => (
                         <div key={idx}>
                             <GamePanels userColors={userColors} userId={userId} gameId={game[0]}/>
