@@ -8,12 +8,14 @@ interface ButtonOverlayProps extends ButtonProps {
     // other props
     children?: ReactNode;
     overlayText?: string;
+    tooltipText?: string;
     onClick?: () => void;
     className?: string;
 }
 
-export default function ButtonOverlay({children, overlayText, ...props}: ButtonOverlayProps) {
+export default function ButtonOverlay({children, overlayText, tooltipText, ...props}: ButtonOverlayProps) {
         const [show, setShow] = useState(false);
+        const [showTooltip, setShowTooltip] = useState(tooltipText !== undefined);
         const triggerRef = useRef(null);
         const containerRef = useRef(null);
         return (
@@ -23,6 +25,7 @@ export default function ButtonOverlay({children, overlayText, ...props}: ButtonO
                     ref={triggerRef}
                     onClick={() => {
                         setShow(true);
+                        setShowTooltip(false);
                         setTimeout(() => {setShow(false);}, 2000);
                         if (props.onClick) {
                             props.onClick();
@@ -30,7 +33,7 @@ export default function ButtonOverlay({children, overlayText, ...props}: ButtonO
                     }}
                 >{children}</Button>
                     <Overlay
-                        show={show}
+                        show={show || showTooltip}
                         rootClose
                         offset={[0, 10]}
                         placement={'right'}
@@ -48,7 +51,7 @@ export default function ButtonOverlay({children, overlayText, ...props}: ButtonO
                                             )}
                                         />
                                         <div className="py-1 px-2 text-center rounded bg-blue-500 text-white ">
-                                            {overlayText}
+                                            {showTooltip? tooltipText : overlayText}
                                         </div>
                                 </div>
                             )}

@@ -68,7 +68,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                         })
                         }
                         {Array.from({length: 5 - roomies.length}, (v, k) => k + 1).map((idx) => (
-                            <div key={idx}><ShareLink roomId={roomId}></ShareLink>
+                            <div key={idx}><ShareLink roomId={roomId} showTooltip={idx === 1}></ShareLink>
                             </div>
                         ))}
                     </div>
