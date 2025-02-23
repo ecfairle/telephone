@@ -320,18 +320,18 @@ async function seedGames() {
     return insertedGames;
 }
 
-export async function POST() {
-    try {
-      await client.sql`BEGIN`;
-      await client.sql`DROP table accounts; DROP table sessions; DROP table verification_token;`
-      await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; DROP TABLE users; DROP TABLE rooms`;
-      await seedUsers();
-      await seedGames();
-      await client.sql`COMMIT`;
-
-      return Response.json({ message: 'Database seeded successfully' });
-    } catch (error) {
-      await client.sql`ROLLBACK`;
-      return Response.json({ error }, { status: 500 });
-    }
-}
+// export async function POST() {
+//     try {
+//       await client.sql`BEGIN`;
+//       await client.sql`DROP table accounts; DROP table sessions; DROP table verification_token;`
+//       await client.sql`DROP TABLE game_users; DROP TABLE game_drawings; DROP TABLE games; DROP TABLE users; DROP TABLE rooms`;
+//       await seedUsers();
+//       await seedGames();
+//       await client.sql`COMMIT`;
+//
+//       return Response.json({ message: 'Database seeded successfully' });
+//     } catch (error) {
+//       await client.sql`ROLLBACK`;
+//       return Response.json({ error }, { status: 500 });
+//     }
+// }
