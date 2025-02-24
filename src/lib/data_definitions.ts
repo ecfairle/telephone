@@ -8,6 +8,7 @@
 //     image BYTEA
 // );
 export type GameDrawing = {
+    room_id: string;
     id: string,
     game_id: string,
     next_id: string,

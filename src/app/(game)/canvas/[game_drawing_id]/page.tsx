@@ -26,7 +26,7 @@ export default async function Page({
         <SessionProvider session={session}>
             {drawing ?
                 <Canvas
-                gameDrawingId={drawing.id}
+                drawing={drawing}
                 secretWord={drawing.target_word}/> : "Not your turn in this game"}
         </SessionProvider>
     );

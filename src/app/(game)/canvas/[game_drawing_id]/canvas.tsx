@@ -14,9 +14,12 @@ import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import {useSession} from "next-auth/react";
 import Dropdown from "@restart/ui/Dropdown";
+import {GameDrawing} from "@/lib/data_definitions";
 
 
-export default function Canvas({secretWord, gameDrawingId} : {secretWord:string, gameDrawingId:string}) {
+export default function Canvas({secretWord, drawing} : {secretWord:string, drawing:GameDrawing}) {
+    const gameDrawingId = drawing.id;
+    const roomId = drawing.room_id;
     const router = useRouter();
     const session = useSession();
     if (!session) {
@@ -94,7 +97,7 @@ export default function Canvas({secretWord, gameDrawingId} : {secretWord:string,
         const finalDataURL = tempCanvas.toDataURL(`image/png`);
         await uploadImage(finalDataURL, `${gameDrawingId}.png`, gameDrawingId);
 
-        router.push(`/`);
+        router.push(`/room/${roomId}`);
     }
 
     return (

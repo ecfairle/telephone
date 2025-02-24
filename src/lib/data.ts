@@ -12,7 +12,8 @@ import { format, toZonedTime } from 'date-fns-tz';
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
         const data = await sql<GameDrawing>`
-            SELECT game_drawings.* FROM game_drawings
+            SELECT game_drawings.*, games.room_id FROM game_drawings
+            JOIN games on games.id = game_drawings.game_id
             WHERE game_drawings.id = ${game_drawing_id}
               AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})
               AND game_drawings.drawing_done=false`;
@@ -54,7 +55,8 @@ export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
     try {
         // TODO: shouldn't need to do updates here anymore
         const data = await sql<GameDrawing>`
-            SELECT game_drawings.* FROM game_drawings
+            SELECT game_drawings.*, games.room_id FROM game_drawings
+            JOIN games on games.id = game_drawings.game_id
             WHERE game_drawings.id = ${game_drawing_id}
               AND (game_drawings.guesser_id IS NULL or game_drawings.guesser_id=${user_id})
               AND game_drawings.target_word IS NULL

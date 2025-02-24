@@ -23,7 +23,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
             })
 
         })
-        router.push("/");
+        router.push(`/room/${gameDrawing.room_id}`);
     }
 
     return (
