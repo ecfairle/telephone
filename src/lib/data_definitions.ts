@@ -22,6 +22,23 @@ export type GameDrawing = {
     signed_url: string
 }
 
+export type GameDrawingShuff = {
+    original_game_id: string,
+    room_id: string,
+    id: string,
+    game_id: string,
+    next_id: string,
+    drawer_id: string,
+    guesser_id: string,
+    target_word: string,
+    guesser_name: string,
+    drawer_name: string,
+    drawing_done: boolean,
+    prev_game_drawing_id: string,
+    signed_url: string
+}
+
+
 // CREATE TABLE IF NOT EXISTS games (
 //     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
 //     original_word TEXT NOT NULL
@@ -31,6 +48,13 @@ export type Game = {
     original_word: string
 }
 
+export type GameShuff = {
+    id: string,
+    orig_game_id: string,
+    original_word: string,
+    draw_turn: boolean
+}
+
 // CREATE TABLE IF NOT EXISTS users (
 //     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
 //     name VARCHAR(255) NOT NULL,
@@ -38,6 +62,15 @@ export type Game = {
 //     password TEXT NOT NULL
 // );
 export type User = {
+    id: string,
+    name: string,
+    email: string,
+    image: string,
+    room_id: string
+}
+
+export type GameShuffUser = {
+    orig_game_id: string,
     id: string,
     name: string,
     email: string,

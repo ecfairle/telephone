@@ -63,6 +63,7 @@ export default function GamePanels ({userColors, userId, gameId} : {userColors: 
         turn.isMe);
     const gameDone = (lastDrawing.target_word !== null && lastDrawing.drawer_id === null) ||
         (lastDrawing.drawing_done);
+    console.log('LAST DRAWING', lastDrawing.id);
     let curPlayer = null;
     if (lastDrawing.drawer_id === null) {
         // guess turn

@@ -97,7 +97,12 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
         const finalDataURL = tempCanvas.toDataURL(`image/png`);
         await uploadImage(finalDataURL, `${gameDrawingId}.png`, gameDrawingId);
 
-        router.push(`/room/${roomId}`);
+        if (roomId) {
+            router.push(`/room/${roomId}`);
+        }
+        else {
+            router.push(`/shuffle`)
+        }
     }
 
     return (

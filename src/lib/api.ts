@@ -133,3 +133,15 @@ export async function createRoom(user_id:string) {
         })
     })
 }
+
+export async function pullShuffle() {
+    return await fetch(`/pull`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+        })
+    })
+}

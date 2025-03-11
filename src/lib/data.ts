@@ -2,7 +2,7 @@ import {QueryResult, sql} from '@vercel/postgres';
 import { v4 } from "uuid";
 import {
     Game,
-    GameDrawing, User,
+    GameDrawing, GameDrawingShuff, GameShuff, GameShuffUser, User,
 } from './data_definitions';
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
@@ -13,7 +13,7 @@ export async function reserveGameDrawing(game_drawing_id:string, user_id:string)
     try {
         const data = await sql<GameDrawing>`
             SELECT game_drawings.*, games.room_id FROM game_drawings
-            JOIN games on games.id = game_drawings.game_id
+            LEFT JOIN games on games.id = game_drawings.game_id
             WHERE game_drawings.id = ${game_drawing_id}
               AND (game_drawings.drawer_id IS NULL or game_drawings.drawer_id=${user_id})
               AND game_drawings.drawing_done=false`;
@@ -56,7 +56,7 @@ export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
         // TODO: shouldn't need to do updates here anymore
         const data = await sql<GameDrawing>`
             SELECT game_drawings.*, games.room_id FROM game_drawings
-            JOIN games on games.id = game_drawings.game_id
+            LEFT JOIN games on games.id = game_drawings.game_id
             WHERE game_drawings.id = ${game_drawing_id}
               AND (game_drawings.guesser_id IS NULL or game_drawings.guesser_id=${user_id})
               AND game_drawings.target_word IS NULL
@@ -93,6 +93,11 @@ export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
     }
 }
 
+export async function updateShuffleGame(game_drawing_id:string) {
+    const data = await sql<GameShuff>`
+    UPDATE shuffle_games set draw_turn=false, available=true from game_drawings where game_drawings.id=${game_drawing_id} AND game_drawings.game_id=shuffle_games.id RETURNING shuffle_games.*`;
+}
+
 export async function setDrawingDone(game_drawing_id:string) {
     try {
         const data = await sql<GameDrawing>`
@@ -105,6 +110,7 @@ export async function setDrawingDone(game_drawing_id:string) {
         }
 
         const nextPlayer = await nextPlayerByGame(drawing.game_id);
+        await updateShuffleGame(game_drawing_id);
         if (nextPlayer === null) {
             // no more players
             await client.del('game_drawings_' + drawing.game_id + dateAtPST());
@@ -180,6 +186,12 @@ export async function setGuess(game_drawing_id:string, guess: string) {
         }
 
         const nextPlayer = await nextPlayerByGame(gameDrawing.game_id);
+        await sql`UPDATE shuffle_games
+                  set draw_turn= true,
+                      available= true from game_drawings
+                  where game_drawings.id=${game_drawing_id}
+                    AND game_drawings.game_id=shuffle_games.id RETURNING shuffle_games.*`;
+
         const nextPlayerId = nextPlayer? nextPlayer.id : null;
         await sql<GameDrawing>`
         UPDATE game_drawings SET target_word=${guess},
@@ -392,6 +404,30 @@ export async function startNewGameForRoom(room_id:string) {
     }
 }
 
+export async function createFreshShufflePrompts(user_id:string, numGames:number=1) {
+    try {
+
+        const wordRows = await sql`SELECT * FROM words ORDER BY RANDOM() limit ${numGames}`;
+
+        let i = 0;
+        const gameIds = [];
+        while (i < numGames) {
+            const word = wordRows.rows[i].word;
+            const sGameId = v4();
+            gameIds.push(sGameId);
+            await sql`INSERT INTO shuffle_games (id, orig_game_id, original_word) VALUES (${sGameId}, ${sGameId}, ${word}) RETURNING *`
+            await sql`INSERT INTO game_drawings (game_id, target_word, drawing_done, drawer_id)
+                        VALUES (${sGameId}, ${word}, false, ${user_id})`
+            await sql`INSERT INTO shuffle_game_users (orig_game_id, user_id) VALUES (${sGameId}, ${user_id})`
+            i++;
+        }
+        return gameIds;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch games data.');
+    }
+}
+
 export async function fetchAvailableDrawings(gameIds:string[]) {
     try {
         if (gameIds.length === 0) {
@@ -491,5 +527,198 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch games data.');
+    }
+}
+
+export async function pullShuffle(user_id:string) {
+    try {
+        const drawData = await sql<GameShuff>`
+            SELECT orig_game_id from shuffle_games where orig_game_id not in (
+                select orig_game_id from shuffle_game_users where user_id=${user_id}
+            ) AND draw_turn=true AND available=true GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT 3`;
+
+        const drawGameIds = drawData.rows.map(row=>row.orig_game_id);
+
+
+        if (drawGameIds.length < 1) {
+            const newGameIds = await createFreshShufflePrompts(user_id);
+            drawGameIds.push(...newGameIds);
+        }
+        const drawShuffGameIds = await Promise.all(drawGameIds.map(
+            async (origGameId) => {
+                const data = await sql`SELECT *
+                          from shuffle_games
+                          where orig_game_id = ${origGameId}
+                          ORDER BY created_at LIMIT 1`
+                return data.rows[0].id;
+            }
+        ));
+        const availableShuffleDrawGames = await Promise.all(drawData.rows.map(async (gs) =>
+            {
+                const firstGame = await sql<GameShuff>`
+                SELECT * from shuffle_games where orig_game_id=${gs.orig_game_id} AND available=true ORDER BY created_at LIMIT 1`;
+                return firstGame.rows[0];
+            }
+        ));
+
+        const getLastGameRecord = async (game:GameShuff) =>  {
+            const gameDrawingsData = await sql<GameDrawing>`
+                SELECT * from game_drawings where game_id=${game.id}`;
+            const drawingsByPrevId = gameDrawingsData.rows.reduce(
+                (prev: {[prev_id: string]: GameDrawing}, cur) => {
+                    return cur.prev_game_drawing_id!==null? {...prev, [cur.prev_game_drawing_id]: cur} : prev
+                }, {});
+            const firstDrawing = gameDrawingsData.rows.find(d => d.prev_game_drawing_id === null);
+            const drawingsInOrder:GameDrawing[] = [];
+            let curDrawing = firstDrawing;
+            while (curDrawing) {
+                drawingsInOrder.push(curDrawing);
+                if (curDrawing.id in drawingsByPrevId) {
+                    curDrawing = drawingsByPrevId[curDrawing.id];
+                }
+                else {
+                    break;
+                }
+            }
+            const lastDrawing = drawingsInOrder[drawingsInOrder.length - 1];
+            return lastDrawing;
+        }
+
+        const lastEntriesDrawTurn = await Promise.all(availableShuffleDrawGames.map(getLastGameRecord));
+        for (const drawing of lastEntriesDrawTurn) {
+            console.log('dr--', drawing.id)
+            // check if game hasn't been assigned yet
+            if (!drawing.target_word || drawing.drawer_id !== null) continue;
+
+            await sql<GameDrawing>`
+                UPDATE game_drawings SET drawer_id=${user_id} where id=${drawing.id} RETURNING *`
+            await sql`INSERT INTO shuffle_game_users (orig_game_id, user_id) VALUES (${drawing.game_id}, ${user_id})`
+            await client.del('game_drawings_' + drawing.game_id + dateAtPST());
+        }
+
+        const availableGuessData = await sql<GameShuff>`
+            SELECT orig_game_id from shuffle_games where orig_game_id not in (
+                select orig_game_id from shuffle_game_users where user_id=${user_id}
+            ) AND draw_turn=false AND available=true GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT 3`;
+        const guessGameIds = availableGuessData.rows.map(row=>row.orig_game_id);
+        console.log('GgIds ', guessGameIds);
+        const availableShuffleGuessGames = await Promise.all(availableGuessData.rows.map(async (gs) =>
+        {
+            const firstGame = await sql<GameShuff>`
+                SELECT * from shuffle_games where orig_game_id=${gs.orig_game_id} AND available=true ORDER BY created_at LIMIT 1`;
+            return firstGame.rows[0];
+        }
+        ));
+        console.log('GgIdsSSS ', availableShuffleGuessGames.map(row=>row.id));
+        const lastEntries = await Promise.all(availableShuffleGuessGames.map(getLastGameRecord));
+        for (const drawing of lastEntries) {
+            console.log('d--', drawing.id)
+            // check if game hasn't been assigned yet
+            if (!drawing.drawing_done || drawing.guesser_id !== null) continue;
+
+            await sql<GameDrawing>`
+                INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
+                VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${user_id}) RETURNING *`
+            await sql`INSERT INTO shuffle_game_users (orig_game_id, user_id) VALUES (${drawing.game_id}, ${user_id})`
+            await sql`UPDATE shuffle_games SET available=false where id=${drawing.game_id}`
+            await client.del('game_drawings_' + drawing.game_id + dateAtPST());
+        }
+
+
+        const shuffGameIds = await Promise.all([...drawGameIds, ...guessGameIds].map(
+            async (origGameId) => {
+                const data = await sql`SELECT *
+                          from shuffle_games
+                          where orig_game_id = ${origGameId}
+                          ORDER BY created_at LIMIT 1`
+                return data.rows[0].id;
+            }
+        ));
+
+        return shuffGameIds;
+    } catch (error) {
+        console.log(error);
+        throw new Error('Failed to create Shuffle game data.');
+    }
+}
+
+export async function getShuffleGames(user_id:string) {
+    try {
+        const data = await sql`SELECT * FROM shuffle_game_users WHERE user_id=${user_id}`;
+        return data.rows.map(row => row.orig_game_id);
+    } catch(error) {
+        console.log(error);
+        throw new Error('Failed to get shuffle games');
+    }
+}
+
+export async function createShuff(user_id:string) {
+    try {
+        const drawData = await sql<GameShuff>`
+            select distinct(shuffle_games.id) from shuffle_games join shuffle_game_users 
+                on shuffle_game_users.game_id=shuffle_games.id and shuffle_game_users.user_id=${user_id}`;
+
+        return drawData.rows.map(row => row.id);
+
+        const drawGameIds = drawData.rows.map(row=>row.orig_game_id);
+        if (drawGameIds.length < 1) {
+            const newGameIds = await createFreshShufflePrompts(user_id);
+            drawGameIds.push(...newGameIds);
+        }
+        const drawShuffGameIds = await Promise.all(drawGameIds.map(
+            async (origGameId) => {
+                const data = await sql`SELECT *
+                          from shuffle_games
+                          where orig_game_id = ${origGameId}
+                          ORDER BY created_at LIMIT 1`
+                return data.rows[0].id;
+            }
+        ));
+
+        const guessData = await sql<GameShuff>`
+            SELECT orig_game_id from shuffle_games where orig_game_id not in (
+                select orig_game_id from shuffle_game_users where user_id=${user_id}
+            ) AND draw_turn=false GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT 3`;
+        const guessGameIds = guessData.rows.map(row=>row.orig_game_id);
+        const shuffGameIds = await Promise.all([...drawGameIds, ...guessGameIds].map(
+            async (origGameId) => {
+                const data = await sql`SELECT *
+                          from shuffle_games
+                          where orig_game_id = ${origGameId}
+                          ORDER BY created_at LIMIT 1`
+                return data.rows[0].id;
+            }
+        ));
+
+        // const availableGameDrawingIds = await Promise.all([...drawData.rows, ...guessData.rows].map(async (gs) => {
+        //     const firstGame = await sql<GameShuff>`
+        //         SELECT * from shuffle_games where orig_game_id=${gs.orig_game_id} ORDER BY created_at LIMIT 1`;
+        //     const game = firstGame.rows[0];
+        //     const gameDrawingsData = await sql<GameDrawingShuff>`
+        //         SELECT * from shuffle_game_drawings where game_id=${game.id}`;
+        //     const drawingsByPrevId = gameDrawingsData.rows.reduce((prev: {[prev_id: string]: GameDrawingShuff}, cur) => {
+        //             return {...prev, [cur.prev_game_drawing_id]: cur}
+        //     }, {});
+        //     const firstDrawing = gameDrawingsData.rows.find(d => d.prev_game_drawing_id === null);
+        //     const drawingsInOrder:GameDrawingShuff[] = [];
+        //     let curDrawing = firstDrawing;
+        //     while (curDrawing) {
+        //         drawingsInOrder.push(curDrawing);
+        //         if (curDrawing.id in drawingsByPrevId) {
+        //             curDrawing = drawingsByPrevId[curDrawing.id];
+        //         }
+        //         else {
+        //             break;
+        //         }
+        //     }
+        //     const lastDrawing = drawingsInOrder[drawingsInOrder.length - 1];
+        //     return lastDrawing.id;
+        //
+        // }));
+
+        return shuffGameIds;
+    } catch (error) {
+        console.log(error);
+        throw new Error('Failed to create Shuffle game data.');
     }
 }
