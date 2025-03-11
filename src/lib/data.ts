@@ -214,7 +214,9 @@ export async function fetchGames(user_id:string, room_id:string) {
             return JSON.parse(cachedGames);
         }
         const data = await sql`
-            SELECT g.game_id, users.name FROM game_users g
+            SELECT g.game_id, users.name, 
+                   TO_CHAR(play_date, 'YYYY-MM-DD')
+            FROM game_users g
                 JOIN users original_user on g.user_id = original_user.id
                 JOIN games on games.id = g.game_id
                     LEFT JOIN game_users g2 on (g2.game_id = g.game_id AND g2.user_id != g.user_id)
@@ -232,7 +234,8 @@ export async function fetchGames(user_id:string, room_id:string) {
                 }
             }, {}
         )
-        await client.set('room_games_' + room_id + dateAtPST(), JSON.stringify(result));
+        const dateStr = data.rows.length > 0? data.rows[0].play_date : dateAtPST();
+        await client.set('room_games_' + room_id + dateStr, JSON.stringify(result));
         return result;
     } catch (error) {
         console.error('Database Error:', error);
