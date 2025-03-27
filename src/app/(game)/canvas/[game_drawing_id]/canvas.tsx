@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import { OpenableComponent } from '@/components/modal'
 import {
     ReactSketchCanvas,
@@ -8,7 +8,7 @@ import {
 } from 'react-sketch-canvas'
 
 import { Button } from '@/components/button'
-import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal} from 'lucide-react'
+import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal, Clock} from 'lucide-react'
 import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -104,12 +104,23 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
             router.push(`/shuffle`)
         }
     }
-
+    const calculateExpiringMinLeft = (drawingUpdatedAt:Date) => {
+        const timeDiff = new Date(Date.now()).getTime() - drawingUpdatedAt.getTime();
+        return 30 - Math.floor(timeDiff / 1000 / 60) % 60;
+    }
+    const [expiryMinLeft, setExpiryMinLeft] = useState(calculateExpiringMinLeft(drawing.updated_at));
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setExpiryMinLeft(calculateExpiringMinLeft(drawing.updated_at));
+        }, 3000);
+        return () => clearInterval(intervalId);
+    }, [drawing])
     return (
         <section className='py-10 p-5'>
             <canvas id="myCanvas" ref={tempCanvasRef} width="500" height="500" className={'hidden'}></canvas>
             <div className='container mx-auto max-w-fit justify-center text-center'>
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
+                {roomId === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`}min left`}</div>}
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
                         width='500px'

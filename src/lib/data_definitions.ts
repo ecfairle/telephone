@@ -19,7 +19,9 @@ export type GameDrawing = {
     drawer_name: string,
     drawing_done: boolean,
     prev_game_drawing_id: string,
-    signed_url: string
+    signed_url: string,
+    updated_at: Date,
+    created_at: Date,
 }
 
 export type GameDrawingShuff = {
@@ -52,7 +54,9 @@ export type GameShuff = {
     id: string,
     orig_game_id: string,
     original_word: string,
-    draw_turn: boolean
+    draw_turn: boolean,
+    available:boolean,
+    reserve_expired: boolean
 }
 
 // CREATE TABLE IF NOT EXISTS users (

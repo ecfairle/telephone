@@ -261,7 +261,7 @@ async function seedGames() {
     );
   `;
     await client.sql`CREATE TRIGGER set_timestamp
-        BEFORE UPDATE ON games
+        BEFORE UPDATE ON game_drawings
         FOR EACH ROW
         EXECUTE PROCEDURE trigger_set_timestamp();`
 

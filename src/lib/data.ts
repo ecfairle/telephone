@@ -6,8 +6,10 @@ import {
 } from './data_definitions';
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
-import client from "@/lib/redis";
+import redis from "@/lib/redis";
 import { format, toZonedTime } from 'date-fns-tz';
+
+const MAX_SHUFFLE_GAME_LENGTH = 8;
 
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
@@ -113,13 +115,13 @@ export async function setDrawingDone(game_drawing_id:string) {
         await updateShuffleGame(game_drawing_id);
         if (nextPlayer === null) {
             // no more players
-            await client.del('game_drawings_' + drawing.game_id + dateAtPST());
+            await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
             return null;
         }
         await sql<GameDrawing>`
         INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
         VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id}) RETURNING *`
-        await client.del('game_drawings_' + drawing.game_id + dateAtPST());
+        await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to update game_drawings record.');
@@ -174,9 +176,10 @@ WHERE og.id=${game_drawing_id}`;
 
 export async function setGuess(game_drawing_id:string, guess: string) {
     try {
-        const data = await sql<GameDrawing>`
-            SELECT * FROM game_drawings
-            WHERE game_drawings.id = ${game_drawing_id}`;
+        const data = await sql<GameDrawing & {guesser_count:string, drawer_count:string}>`
+            SELECT game_drawings.*, count(distinct(gdg.drawer_id)) as drawer_count, count(distinct(gdg.guesser_id)) as guesser_count FROM game_drawings
+            LEFT JOIN game_drawings gdg on gdg.game_id=game_drawings.game_id
+            WHERE game_drawings.id = ${game_drawing_id} group by game_drawings.id`;
         const gameDrawing = data.rows.length > 0 ? data.rows[0] : null;
         if (gameDrawing === null) {
             throw new Error(`Game drawing not found: ${game_drawing_id}`);
@@ -186,18 +189,21 @@ export async function setGuess(game_drawing_id:string, guess: string) {
         }
 
         const nextPlayer = await nextPlayerByGame(gameDrawing.game_id);
+        const totalPlayers = parseInt(gameDrawing.drawer_count) + parseInt(gameDrawing.guesser_count);
+        const isAvailable = totalPlayers < MAX_SHUFFLE_GAME_LENGTH;
+        console.log('\n\n\nisAvailable: ', isAvailable, gameDrawing.drawer_count, gameDrawing.guesser_count);
         await sql`UPDATE shuffle_games
                   set draw_turn= true,
-                      available= true from game_drawings
-                  where game_drawings.id=${game_drawing_id}
-                    AND game_drawings.game_id=shuffle_games.id RETURNING shuffle_games.*`;
+                      available= ${isAvailable}
+                      WHERE shuffle_games.id=${gameDrawing.game_id}
+                      RETURNING shuffle_games.*`;
 
         const nextPlayerId = nextPlayer? nextPlayer.id : null;
         await sql<GameDrawing>`
         UPDATE game_drawings SET target_word=${guess},
                              drawer_id=${nextPlayerId}
         WHERE game_drawings.id = ${game_drawing_id}`;
-        await client.del('game_drawings_' + gameDrawing.game_id + dateAtPST());
+        await redis.del('game_drawings_' + gameDrawing.game_id + dateAtPST());
 
     } catch (error) {
         console.error('Database Error:', error);
@@ -220,7 +226,7 @@ export async function addDrawer(user_id:string, game_drawing_id:string) {
 
 export async function fetchGames(user_id:string, room_id:string) {
     try {
-        const cachedGames = await client.get('room_games_' + room_id + dateAtPST());
+        const cachedGames = await redis.get('room_games_' + room_id + dateAtPST());
         if (cachedGames !== null) {
             console.log('cache hit for games in room: ' + room_id)
             return JSON.parse(cachedGames);
@@ -244,7 +250,7 @@ export async function fetchGames(user_id:string, room_id:string) {
                 }
             }, {}
         )
-        await client.set('room_games_' + room_id + dateAtPST(), JSON.stringify(result));
+        await redis.set('room_games_' + room_id + dateAtPST(), JSON.stringify(result));
         return result;
     } catch (error) {
         console.error('Database Error:', error);
@@ -300,14 +306,14 @@ export async function readWordList() {
 
 export async function getRoomies(room_id:string) {
     try {
-        const cachedUsers = await client.get('roomies_' + room_id);
+        const cachedUsers = await redis.get('roomies_' + room_id);
         if (cachedUsers !== null) {
             console.log('cache hit for room: '+ room_id);
             return JSON.parse(cachedUsers);
         }
         const users = await sql`
 SELECT users.* FROM users JOIN user_rooms on user_rooms.room_id=${room_id} and user_rooms.user_id=users.id`;
-        await client.set('roomies_' + room_id, JSON.stringify(users.rows));
+        await redis.set('roomies_' + room_id, JSON.stringify(users.rows));
         return users.rows;
     } catch (error) {
         console.error('Database Error:', error);
@@ -319,7 +325,7 @@ export async function joinRoom(user_id:string, room_id:string) {
     try {
         const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id} RETURNING *`;
         await sql`INSERT INTO user_rooms (user_id,room_id) VALUES (${user_id},${room_id})`
-        await client.del('roomies_' + room_id);
+        await redis.del('roomies_' + room_id);
         return res.rows.length > 0 ? res.rows[0] : null;
     } catch (error) {
         console.error('Database Error:', error);
@@ -332,7 +338,7 @@ export async function leaveRoom(user_id:string, room_id:string) {
         const res = await sql`UPDATE users SET room_id = null where id=${user_id} RETURNING *`;
         await sql`DELETE from user_rooms where user_id=${user_id} and room_id=${room_id}`;
         const user = res.rows.length > 0 ? res.rows[0] : null;
-        await client.del('roomies_' + room_id);
+        await redis.del('roomies_' + room_id);
         return user;
     } catch (error) {
         console.error('Database Error:', error);
@@ -340,11 +346,16 @@ export async function leaveRoom(user_id:string, room_id:string) {
     }
 }
 
-function dateAtPST(dateFormat: string = 'yyyy-MM-dd') {
+export function dateTimeAtPST() {
     const now = new Date();
     const timeZone = 'America/Los_Angeles';
     const zonedDate = toZonedTime(now, timeZone);
-    return format(zonedDate, dateFormat, { timeZone: timeZone });
+    return zonedDate;
+}
+export function dateAtPST(dateFormat: string = 'yyyy-MM-dd') {
+    const pstDateTime = dateTimeAtPST();
+    const timeZone = 'America/Los_Angeles';
+    return format(pstDateTime, dateFormat, { timeZone: timeZone });
 }
 
 export async function startNewGameForRoom(room_id:string) {
@@ -394,7 +405,7 @@ export async function startNewGameForRoom(room_id:string) {
             await sql`INSERT INTO game_drawings (game_id, target_word, drawing_done, drawer_id)
                         VALUES (${newGameId}, ${word}, false, ${users[i]})`
             await sql`INSERT INTO used_words (room_id, word_id) VALUES (${room_id}, ${wordRows.rows[i].id})`
-            await client.del('room_games_' + room_id + dateAtPST());
+            await redis.del('room_games_' + room_id + dateAtPST());
             i++;
         }
 
@@ -436,7 +447,7 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
 
         const values = await Promise.all(gameIds.map(async (gameId) =>
 
-            ({game_id: gameId, data: await client.get('game_drawings_' + gameId + dateAtPST())})));
+            ({game_id: gameId, data: await redis.get('game_drawings_' + gameId + dateAtPST())})));
 
         const cachedDrawings = await Promise.all(values.
         filter((v) => v['data'] !== null).
@@ -465,22 +476,34 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             return {drawings: cachedDrawingsByGameId, nextPlayers: cachedNextPlayersByGameId};
         }
 
-        const data:QueryResult<GameDrawing>[] = await Promise.all(uncachedGameIds.map(async (gameId) => await sql<GameDrawing>`
-            SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name FROM game_drawings 
+        const data:QueryResult<GameDrawing & {is_shuffle_game: boolean}>[] = await Promise.all(uncachedGameIds.map(async (gameId) => await sql<GameDrawing>`
+            SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name, (shuffle_games.id is not null) as is_shuffle_game
+                   FROM game_drawings 
                     LEFT JOIN users guesser on guesser.id = game_drawings.guesser_id
                     LEFT JOIN users drawer on drawer.id = game_drawings.drawer_id
+                    LEFT JOIN shuffle_games on shuffle_games.id=${gameId}
             WHERE game_drawings.game_id = ${gameId}`));
 
         let drawings:GameDrawing[] = [];
         for (const queryRes of data) {
             const thisGameDrawings:GameDrawing[] = [];
-            const drawingsByPrevId = queryRes.rows.reduce((prev: {[prev_id: string]: GameDrawing}, cur) => {
+            const drawingsByPrevId = queryRes.rows.reduce(
+                (prev: {[prev_id: string]: GameDrawing & {is_shuffle_game: boolean}}, cur) => {
                 return {...prev, [cur.prev_game_drawing_id]: cur}
             }, {})
             const firstDrawing = queryRes.rows.find(d => d.prev_game_drawing_id === null);
             let curDrawing = firstDrawing;
+            let idx = 1;
             while (curDrawing) {
-                thisGameDrawings.push(curDrawing);
+                if (curDrawing.is_shuffle_game) {
+                    thisGameDrawings.push({
+                        ...curDrawing,
+                        guesser_name: curDrawing.guesser_id !== null ? `Player ${idx++}` : '',
+                        drawer_name: curDrawing.drawer_id !== null ? `Player ${idx++}` : ''
+                    })
+                }
+                else thisGameDrawings.push(curDrawing);
+
                 if (curDrawing.id in drawingsByPrevId) {
                     curDrawing = drawingsByPrevId[curDrawing.id];
                 }
@@ -511,7 +534,7 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             ({...prev, [cur.gameId]: cur.nextPlayer}), {});
 
         for (const gameId of uncachedGameIds) {
-            await client.set('game_drawings_' + gameId + dateAtPST(), JSON.stringify({
+            await redis.set('game_drawings_' + gameId + dateAtPST(), JSON.stringify({
                 next_players: nextPlayersByGame[gameId],
                 game_drawings: gameDrawings[gameId]
             }));
@@ -530,30 +553,98 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
     }
 }
 
+export async function getAllShuffleGames() {
+    const data = await sql<GameShuff>`select *, ((updated_at + INTERVAL '30 seconds') < (current_timestamp)) as reserve_expired  from shuffle_games`;
+    return data.rows;
+}
+
+export async function unreserveDrawing(gameId:string) {
+    try {
+        const lastRecord = await getLastGameRecord(gameId);
+        // check state is accurate
+        if (lastRecord.drawing_done) {
+            throw new Error('Drawing already finished');
+        }
+        if (lastRecord.prev_game_drawing_id === null) {
+            // this was the first turn
+            await sql`delete from game_drawings where id=${lastRecord.id}`
+            await sql`delete from shuffle_games where id=${gameId}`
+        } else {
+            await sql`update game_drawings set drawer_id=null where id=${lastRecord.id}`;
+            await sql`update shuffle_games set available=true where id=${lastRecord.game_id}`
+        }
+        await sql`delete from shuffle_game_users where orig_game_id = ${gameId} and user_id=${lastRecord.drawer_id}`;
+    } catch (error) {
+        console.log(error);
+        throw new Error('Failed to unreserve drawing');
+    }
+}
+
+export async function unreserveGuess(gameId:string) {
+    try {
+        const lastRecord = await getLastGameRecord(gameId);
+        // check state is accurate
+        if (lastRecord.target_word !== null) {
+            throw new Error('Guess already finished');
+        }
+        await sql`delete from game_drawings where id=${lastRecord.id}`;
+        await sql`update shuffle_games set available=true where id=${lastRecord.game_id}`
+        await sql`delete from shuffle_game_users where orig_game_id = ${gameId} and user_id=${lastRecord.guesser_id}`;
+    } catch (error) {
+        console.log(error);
+        throw new Error('Failed to unreserve drawing');
+    }
+}
+
+const getLastGameRecord = async (gameId:string) =>  {
+    const gameDrawingsData = await sql<GameDrawing>`
+                SELECT * from game_drawings where game_id=${gameId}`;
+    const drawingsByPrevId = gameDrawingsData.rows.reduce(
+        (prev: {[prev_id: string]: GameDrawing}, cur) => {
+            return cur.prev_game_drawing_id!==null? {...prev, [cur.prev_game_drawing_id]: cur} : prev
+        }, {});
+    const firstDrawing = gameDrawingsData.rows.find(d => d.prev_game_drawing_id === null);
+    const drawingsInOrder:GameDrawing[] = [];
+    let curDrawing = firstDrawing;
+    while (curDrawing) {
+        drawingsInOrder.push(curDrawing);
+        if (curDrawing.id in drawingsByPrevId) {
+            curDrawing = drawingsByPrevId[curDrawing.id];
+        }
+        else {
+            break;
+        }
+    }
+    const lastDrawing = drawingsInOrder[drawingsInOrder.length - 1];
+    return lastDrawing;
+}
+
+const TOTAL_DRAWS_SHUFFLE = 2;
+const TOTAL_GUESS_SHUFFLE = 3;
 export async function pullShuffle(user_id:string) {
     try {
-        const drawData = await sql<GameShuff>`
+        const availableDrawTurnsFresh = await sql<GameShuff>`
             SELECT orig_game_id from shuffle_games where orig_game_id not in (
                 select orig_game_id from shuffle_game_users where user_id=${user_id}
-            ) AND draw_turn=true AND available=true GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT 3`;
+            ) AND draw_turn=true AND available=true AND updated_at > current_timestamp - INTERVAL '1 DAY'
+            GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT ${TOTAL_DRAWS_SHUFFLE}`;
 
-        const drawGameIds = drawData.rows.map(row=>row.orig_game_id);
-
-
-        if (drawGameIds.length < 1) {
-            const newGameIds = await createFreshShufflePrompts(user_id);
-            drawGameIds.push(...newGameIds);
+        const drawTurns = availableDrawTurnsFresh.rows;
+        if (drawTurns.length < TOTAL_DRAWS_SHUFFLE) {
+            const oldDrawsCount = TOTAL_DRAWS_SHUFFLE - drawTurns.length;
+            const availableDrawTurnsOld = await sql<GameShuff>`
+                SELECT orig_game_id from shuffle_games where orig_game_id not in (
+                    select orig_game_id from shuffle_game_users where user_id=${user_id}
+                ) AND draw_turn=true AND available=true AND updated_at <= current_timestamp - INTERVAL '1 DAY'
+                GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT ${oldDrawsCount}`;
+            drawTurns.push(...availableDrawTurnsOld.rows);
         }
-        const drawShuffGameIds = await Promise.all(drawGameIds.map(
-            async (origGameId) => {
-                const data = await sql`SELECT *
-                          from shuffle_games
-                          where orig_game_id = ${origGameId}
-                          ORDER BY created_at LIMIT 1`
-                return data.rows[0].id;
-            }
-        ));
-        const availableShuffleDrawGames = await Promise.all(drawData.rows.map(async (gs) =>
+        const drawGameIds = drawTurns.map(row=>row.orig_game_id);
+
+        const newGameIds = await createFreshShufflePrompts(user_id, 1);
+        drawGameIds.push(...newGameIds);
+
+        const availableShuffleDrawGames = await Promise.all(drawTurns.map(async (gs) =>
             {
                 const firstGame = await sql<GameShuff>`
                 SELECT * from shuffle_games where orig_game_id=${gs.orig_game_id} AND available=true ORDER BY created_at LIMIT 1`;
@@ -561,30 +652,8 @@ export async function pullShuffle(user_id:string) {
             }
         ));
 
-        const getLastGameRecord = async (game:GameShuff) =>  {
-            const gameDrawingsData = await sql<GameDrawing>`
-                SELECT * from game_drawings where game_id=${game.id}`;
-            const drawingsByPrevId = gameDrawingsData.rows.reduce(
-                (prev: {[prev_id: string]: GameDrawing}, cur) => {
-                    return cur.prev_game_drawing_id!==null? {...prev, [cur.prev_game_drawing_id]: cur} : prev
-                }, {});
-            const firstDrawing = gameDrawingsData.rows.find(d => d.prev_game_drawing_id === null);
-            const drawingsInOrder:GameDrawing[] = [];
-            let curDrawing = firstDrawing;
-            while (curDrawing) {
-                drawingsInOrder.push(curDrawing);
-                if (curDrawing.id in drawingsByPrevId) {
-                    curDrawing = drawingsByPrevId[curDrawing.id];
-                }
-                else {
-                    break;
-                }
-            }
-            const lastDrawing = drawingsInOrder[drawingsInOrder.length - 1];
-            return lastDrawing;
-        }
-
-        const lastEntriesDrawTurn = await Promise.all(availableShuffleDrawGames.map(getLastGameRecord));
+        const lastEntriesDrawTurn = await Promise.all(
+            availableShuffleDrawGames.map(game => game.id).map(getLastGameRecord));
         for (const drawing of lastEntriesDrawTurn) {
             console.log('dr--', drawing.id)
             // check if game hasn't been assigned yet
@@ -593,16 +662,31 @@ export async function pullShuffle(user_id:string) {
             await sql<GameDrawing>`
                 UPDATE game_drawings SET drawer_id=${user_id} where id=${drawing.id} RETURNING *`
             await sql`INSERT INTO shuffle_game_users (orig_game_id, user_id) VALUES (${drawing.game_id}, ${user_id})`
-            await client.del('game_drawings_' + drawing.game_id + dateAtPST());
+            await sql`UPDATE shuffle_games SET available=false where id=${drawing.game_id}`
+            await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
         }
 
-        const availableGuessData = await sql<GameShuff>`
+
+        const availableGuessTurnsFresh = await sql<GameShuff>`
             SELECT orig_game_id from shuffle_games where orig_game_id not in (
                 select orig_game_id from shuffle_game_users where user_id=${user_id}
-            ) AND draw_turn=false AND available=true GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT 3`;
-        const guessGameIds = availableGuessData.rows.map(row=>row.orig_game_id);
+            ) AND draw_turn=false AND available=true AND updated_at > current_timestamp - INTERVAL '1 DAY'
+            GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT ${TOTAL_GUESS_SHUFFLE}`;
+
+        const guessTurns = availableGuessTurnsFresh.rows;
+        if (guessTurns.length < TOTAL_GUESS_SHUFFLE) {
+            const availableGuessTurnsOld = await sql<GameShuff>`
+                SELECT orig_game_id from shuffle_games where orig_game_id not in (
+                    select orig_game_id from shuffle_game_users where user_id=${user_id}
+                    ) AND draw_turn=false AND available=true AND updated_at <= current_timestamp - INTERVAL '1 DAY'
+                GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT ${TOTAL_GUESS_SHUFFLE}`;
+            guessTurns.concat(availableGuessTurnsOld.rows);
+        }
+
+
+        const guessGameIds = guessTurns.map(row=>row.orig_game_id);
         console.log('GgIds ', guessGameIds);
-        const availableShuffleGuessGames = await Promise.all(availableGuessData.rows.map(async (gs) =>
+        const availableShuffleGuessGames = await Promise.all(guessTurns.map(async (gs) =>
         {
             const firstGame = await sql<GameShuff>`
                 SELECT * from shuffle_games where orig_game_id=${gs.orig_game_id} AND available=true ORDER BY created_at LIMIT 1`;
@@ -610,7 +694,8 @@ export async function pullShuffle(user_id:string) {
         }
         ));
         console.log('GgIdsSSS ', availableShuffleGuessGames.map(row=>row.id));
-        const lastEntries = await Promise.all(availableShuffleGuessGames.map(getLastGameRecord));
+        const lastEntries = await Promise.all(
+            availableShuffleGuessGames.map(game => game.id).map(getLastGameRecord));
         for (const drawing of lastEntries) {
             console.log('d--', drawing.id)
             // check if game hasn't been assigned yet
@@ -621,7 +706,7 @@ export async function pullShuffle(user_id:string) {
                 VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${user_id}) RETURNING *`
             await sql`INSERT INTO shuffle_game_users (orig_game_id, user_id) VALUES (${drawing.game_id}, ${user_id})`
             await sql`UPDATE shuffle_games SET available=false where id=${drawing.game_id}`
-            await client.del('game_drawings_' + drawing.game_id + dateAtPST());
+            await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
         }
 
 
@@ -644,8 +729,14 @@ export async function pullShuffle(user_id:string) {
 
 export async function getShuffleGames(user_id:string) {
     try {
-        const data = await sql`SELECT * FROM shuffle_game_users WHERE user_id=${user_id}`;
-        return data.rows.map(row => row.orig_game_id);
+        const data = await sql`SELECT * FROM shuffle_game_users WHERE user_id=${user_id} order by created_at desc`;
+        const gameIds = data.rows.map(row => row.orig_game_id);
+        const lastRecords = await Promise.all(gameIds.map(async gameId=> await getLastGameRecord(gameId)));
+        return lastRecords.map(record => ({
+            ...record,
+            drawTurn: record.drawer_id && !record.drawing_done,
+            turnUser: (record.drawer_id && !record.drawing_done)? record.drawer_id: record.target_word === null ? record.guesser_id : null,
+        }));
     } catch(error) {
         console.log(error);
         throw new Error('Failed to get shuffle games');
