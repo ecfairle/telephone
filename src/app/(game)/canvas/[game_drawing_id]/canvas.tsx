@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import { OpenableComponent } from '@/components/modal'
 import {
     ReactSketchCanvas,
@@ -97,13 +97,29 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
         const finalDataURL = tempCanvas.toDataURL(`image/png`);
         await uploadImage(finalDataURL, `${gameDrawingId}.png`, gameDrawingId);
 
-        router.push(`/room/${roomId}`);
+        if (roomId) {
+            router.push(`/room/${roomId}`);
+        }
+        else {
+            router.push(`/shuffle`)
+        }
     }
-
+    const calculateExpiringMinLeft = (drawingUpdatedAt:Date) => {
+        const timeDiff = new Date(Date.now()).getTime() - drawingUpdatedAt.getTime();
+        return 30 - Math.floor(timeDiff / 1000 / 60) % 60;
+    }
+    const [expiryMinLeft, setExpiryMinLeft] = useState(calculateExpiringMinLeft(drawing.updated_at));
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setExpiryMinLeft(calculateExpiringMinLeft(drawing.updated_at));
+        }, 3000);
+        return () => clearInterval(intervalId);
+    }, [drawing])
     return (
         <section className='py-10 p-5'>
             <canvas id="myCanvas" ref={tempCanvasRef} width="500" height="500" className={'hidden'}></canvas>
             <div className='container mx-auto max-w-fit justify-center text-center'>
+                {roomId === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
@@ -117,7 +133,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
                     />
 
                     <div
-                        className='flex flex-col items-center gap-3 pt-6  position-relative'>
+                        className='flex flex-col items-center gap-3 pt-6 position-relative'>
                         {/* Color picker */}
                         <Button
                             size='icon'

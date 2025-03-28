@@ -24,7 +24,7 @@ export default function ButtonOverlay({children, overlayText, tooltipText, ...pr
                     {...props}
                     ref={triggerRef}
                     onClick={() => {
-                        setShow(true);
+                        setShow(overlayText!==undefined);
                         setShowTooltip(false);
                         setTimeout(() => {setShow(false);}, 2000);
                         if (props.onClick) {

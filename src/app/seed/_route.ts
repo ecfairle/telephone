@@ -261,7 +261,7 @@ async function seedGames() {
     );
   `;
     await client.sql`CREATE TRIGGER set_timestamp
-        BEFORE UPDATE ON games
+        BEFORE UPDATE ON game_drawings
         FOR EACH ROW
         EXECUTE PROCEDURE trigger_set_timestamp();`
 
@@ -306,6 +306,38 @@ async function seedGames() {
       prev_game_drawing_id UUID REFERENCES game_drawings
     );
   `;
+
+//     CREATE TABLE shuffle_game_users (
+//         orig_game_id UUID NOT NULL references games,
+//         user_id UUID NOT NULL references users,
+//         created_at timestamp default current_timestamp NOT NULL,
+//         UNIQUE(orig_game_id,user_id)
+// );
+//
+//     CREATE TABLE shuffle_games (
+//         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+//         orig_game_id UUID NOT NULL,
+//         original_word TEXT NOT NULL,
+//         play_date DATE NOT NULL,
+//         room_id UUID NOT NULL REFERENCES rooms,
+//         created_at timestamp default current_timestamp NOT NULL,
+//         updated_at timestamp default current_timestamp NOT NULL
+// );
+//
+//     CREATE TABLE shuffle_game_drawings (
+//         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+//         orig_game_id UUID NOT NULL,
+//         game_id UUID NOT NULL REFERENCES shuffle_games,
+//         drawing_done boolean NOT NULL,
+//         drawer_id UUID REFERENCES users,
+//         guesser_id UUID REFERENCES users,
+//         target_word TEXT,
+//         image BYTEA,
+//         prev_game_drawing_id UUID REFERENCES shuffle_game_drawings,
+//         created_at timestamp default current_timestamp NOT NULL,
+//         updated_at timestamp default current_timestamp NOT NULL
+// );
+
 
     await Promise.all(
         game_drawings.map(async (game_drawing) => {

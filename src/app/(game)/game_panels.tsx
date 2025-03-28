@@ -7,7 +7,7 @@ import {Button} from "@/components/button";
 import {Brush} from "lucide-react";
 
 
-export default function GamePanels ({userColors, userId, gameId} : {userColors: {[name:string]: string }, userId: string, gameId: string}) {
+export default function GamePanels ({userColors, userId, gameId, roomId} : {userColors: {[name:string]: string }, userId: string, gameId: string, roomId?: string}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
@@ -63,6 +63,7 @@ export default function GamePanels ({userColors, userId, gameId} : {userColors: 
         turn.isMe);
     const gameDone = (lastDrawing.target_word !== null && lastDrawing.drawer_id === null) ||
         (lastDrawing.drawing_done);
+    console.log('LAST DRAWING', lastDrawing.id);
     let curPlayer = null;
     if (lastDrawing.drawer_id === null) {
         // guess turn
@@ -81,9 +82,11 @@ export default function GamePanels ({userColors, userId, gameId} : {userColors: 
     console.log(alreadyFinished, isDrawing, isGuessing, myTurn, userColors)
     return (
         <div className={"inline-flex mt-5 ml-3"}>
-            <div className={"w-24 h-24 overflow-hidden text-ellipsis"}><UserTag userColors={userColors}
-                                                                                name={firstDrawing.drawer_name}/>{`'s drawing`}
+            {roomId &&
+            <div className={"w-24 h-24 overflow-hidden text-ellipsis mr-5"}>
+                <UserTag userColors={userColors} name={firstDrawing.drawer_name}/>{`'s drawing`}
             </div>
+            }
             {!myTurn || gameDone ?
                 <div className={"flex flex-row"}>
                     {alreadyFinished &&
@@ -132,7 +135,7 @@ function GameOverview({userColors, firstDrawing, alreadyFinished, turns} :
     return (
         <div className={"inline-flex"}>
             <div
-                className={"w-24 h-24 ml-5 overflow-hidden text-ellipsis"}>
+                className={"w-24 h-24 overflow-hidden text-ellipsis"}>
                 {`The word is: ${alreadyFinished ? firstDrawing.target_word : '_______'}`}
             </div>
             {
