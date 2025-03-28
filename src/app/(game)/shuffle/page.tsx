@@ -1,14 +1,9 @@
-import {createShuff, fetchGames, getRoomies, getRooms, getShuffleGames} from '@/lib/data';
+import {getShuffleGames} from '@/lib/data';
 import {redirect} from "next/navigation";
 import {getServerSession} from "next-auth";
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
-import Lobby from "@/app/(game)/lobby";
-import RoomSelector from "@/app/(game)/room_selector";
-import {User} from "@/lib/data_definitions";
-import JoinRoom from "@/app/(game)/join_room/[room_id]/join";
 import React from "react";
 import GamePanels from "@/app/(game)/game_panels";
-import {Button} from "@/components/button";
 import Pull from "@/app/(game)/shuffle/pull";
 
 export default async function Home() {

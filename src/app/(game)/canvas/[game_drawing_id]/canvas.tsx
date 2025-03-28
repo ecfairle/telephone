@@ -8,7 +8,7 @@ import {
 } from 'react-sketch-canvas'
 
 import { Button } from '@/components/button'
-import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal, Clock} from 'lucide-react'
+import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal} from 'lucide-react'
 import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -119,8 +119,8 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
         <section className='py-10 p-5'>
             <canvas id="myCanvas" ref={tempCanvasRef} width="500" height="500" className={'hidden'}></canvas>
             <div className='container mx-auto max-w-fit justify-center text-center'>
+                {roomId === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
-                {roomId === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`}min left`}</div>}
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
                         width='500px'
@@ -133,7 +133,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
                     />
 
                     <div
-                        className='flex flex-col items-center gap-3 pt-6  position-relative'>
+                        className='flex flex-col items-center gap-3 pt-6 position-relative'>
                         {/* Color picker */}
                         <Button
                             size='icon'

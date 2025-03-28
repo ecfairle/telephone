@@ -78,7 +78,7 @@ export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string
                 <div className={'flex flex-col mt-8'}>
                     {Object.entries(games).map((game, idx) => (
                         <div key={idx}>
-                            <GamePanels userColors={userColors} userId={userId} gameId={game[0]}/>
+                            <GamePanels roomId={roomId} userColors={userColors} userId={userId} gameId={game[0]}/>
                         </div>
                     ))}
                 </div>

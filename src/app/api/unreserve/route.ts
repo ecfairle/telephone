@@ -1,13 +1,6 @@
-import type { NextRequest } from 'next/server';
-import {dateTimeAtPST, getAllShuffleGames, getShuffleGames, unreserveDrawing, unreserveGuess} from "@/lib/data";
+import {getAllShuffleGames, unreserveDrawing, unreserveGuess} from "@/lib/data";
 
-export async function GET(request: NextRequest) {
-    // const authHeader = request.headers.get('authorization');
-    // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    //     return new Response('Unauthorized', {
-    //         status: 401,
-    //     });
-    // }
+export async function GET() {
     const shuffleGames = await getAllShuffleGames();
     for (const shuffleGame of shuffleGames) {
         if (!shuffleGame.available && shuffleGame.reserve_expired) {

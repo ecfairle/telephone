@@ -9,7 +9,7 @@ export async function POST() {
     }
     const userId = session.user.userId;
     try {
-        const res = await pullShuffle(userId);
+        await pullShuffle(userId);
         return Response.json('!');
     } catch (error) {
         return Response.json({ error }, { status: 500 });

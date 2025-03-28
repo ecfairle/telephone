@@ -1,8 +1,8 @@
-import {QueryResult, sql} from '@vercel/postgres';
+import {sql} from '@vercel/postgres';
 import { v4 } from "uuid";
 import {
     Game,
-    GameDrawing, GameDrawingShuff, GameShuff, GameShuffUser, User,
+    GameDrawing, GameShuff, User,
 } from './data_definitions';
 import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
@@ -96,7 +96,7 @@ export async function reserveGameGuess(game_drawing_id:string, user_id:string) {
 }
 
 export async function updateShuffleGame(game_drawing_id:string) {
-    const data = await sql<GameShuff>`
+    await sql<GameShuff>`
     UPDATE shuffle_games set draw_turn=false, available=true from game_drawings where game_drawings.id=${game_drawing_id} AND game_drawings.game_id=shuffle_games.id RETURNING shuffle_games.*`;
 }
 
@@ -476,7 +476,8 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             return {drawings: cachedDrawingsByGameId, nextPlayers: cachedNextPlayersByGameId};
         }
 
-        const data:QueryResult<GameDrawing & {is_shuffle_game: boolean}>[] = await Promise.all(uncachedGameIds.map(async (gameId) => await sql<GameDrawing>`
+        const data = await Promise.all(uncachedGameIds.map(async (gameId) =>
+            await sql<GameDrawing & {is_shuffle_game: boolean}>`
             SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name, (shuffle_games.id is not null) as is_shuffle_game
                    FROM game_drawings 
                     LEFT JOIN users guesser on guesser.id = game_drawings.guesser_id
@@ -750,64 +751,6 @@ export async function createShuff(user_id:string) {
                 on shuffle_game_users.game_id=shuffle_games.id and shuffle_game_users.user_id=${user_id}`;
 
         return drawData.rows.map(row => row.id);
-
-        const drawGameIds = drawData.rows.map(row=>row.orig_game_id);
-        if (drawGameIds.length < 1) {
-            const newGameIds = await createFreshShufflePrompts(user_id);
-            drawGameIds.push(...newGameIds);
-        }
-        const drawShuffGameIds = await Promise.all(drawGameIds.map(
-            async (origGameId) => {
-                const data = await sql`SELECT *
-                          from shuffle_games
-                          where orig_game_id = ${origGameId}
-                          ORDER BY created_at LIMIT 1`
-                return data.rows[0].id;
-            }
-        ));
-
-        const guessData = await sql<GameShuff>`
-            SELECT orig_game_id from shuffle_games where orig_game_id not in (
-                select orig_game_id from shuffle_game_users where user_id=${user_id}
-            ) AND draw_turn=false GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT 3`;
-        const guessGameIds = guessData.rows.map(row=>row.orig_game_id);
-        const shuffGameIds = await Promise.all([...drawGameIds, ...guessGameIds].map(
-            async (origGameId) => {
-                const data = await sql`SELECT *
-                          from shuffle_games
-                          where orig_game_id = ${origGameId}
-                          ORDER BY created_at LIMIT 1`
-                return data.rows[0].id;
-            }
-        ));
-
-        // const availableGameDrawingIds = await Promise.all([...drawData.rows, ...guessData.rows].map(async (gs) => {
-        //     const firstGame = await sql<GameShuff>`
-        //         SELECT * from shuffle_games where orig_game_id=${gs.orig_game_id} ORDER BY created_at LIMIT 1`;
-        //     const game = firstGame.rows[0];
-        //     const gameDrawingsData = await sql<GameDrawingShuff>`
-        //         SELECT * from shuffle_game_drawings where game_id=${game.id}`;
-        //     const drawingsByPrevId = gameDrawingsData.rows.reduce((prev: {[prev_id: string]: GameDrawingShuff}, cur) => {
-        //             return {...prev, [cur.prev_game_drawing_id]: cur}
-        //     }, {});
-        //     const firstDrawing = gameDrawingsData.rows.find(d => d.prev_game_drawing_id === null);
-        //     const drawingsInOrder:GameDrawingShuff[] = [];
-        //     let curDrawing = firstDrawing;
-        //     while (curDrawing) {
-        //         drawingsInOrder.push(curDrawing);
-        //         if (curDrawing.id in drawingsByPrevId) {
-        //             curDrawing = drawingsByPrevId[curDrawing.id];
-        //         }
-        //         else {
-        //             break;
-        //         }
-        //     }
-        //     const lastDrawing = drawingsInOrder[drawingsInOrder.length - 1];
-        //     return lastDrawing.id;
-        //
-        // }));
-
-        return shuffGameIds;
     } catch (error) {
         console.log(error);
         throw new Error('Failed to create Shuffle game data.');

@@ -7,9 +7,9 @@ import {useRouter} from "next/navigation";
 export default function Pull() {
     const router = useRouter();
     return (
-        <Button onClick={async () => {
+        <Button variant={'blue'} size={'lg'} onClick={async () => {
             await pullShuffle();
             router.refresh();
-        }}>Pull</Button>
+        }}>Play!</Button>
     )
 }

@@ -46,6 +46,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
 
     return (
             <div className='container mx-auto max-w-fit box-sizing'>
+                {gameDrawing.room_id === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
                 <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
                     <label>Guess: <input className={'rounded-xl border-black border w-80 pl-2'} name="guess" autoComplete="off"/></label>
                     <Button
@@ -54,7 +55,6 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
                         className={'m-5 bg-blue-500 text-white'}>
                         <SendHorizonal size={25}/>
                     </Button>
-                    {gameDrawing.room_id === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`}min left`}</div>}
                 </form>
                 <img alt='drawing' src={`${imageUrl}`} className='border border-black'/>
             </div>

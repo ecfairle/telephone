@@ -1,4 +1,4 @@
-import {getRooms, getShuffleGames} from "@/lib/data";
+import {getShuffleGames} from "@/lib/data";
 import {getServerSession} from "next-auth";
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
 
