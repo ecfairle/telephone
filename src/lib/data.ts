@@ -794,7 +794,7 @@ export async function getShuffleGames(user_id:string) {
         const data = await sql`SELECT * FROM shuffle_game_users WHERE user_id=${user_id} order by created_at desc`;
         const gameIds = data.rows.map(row => row.orig_game_id);
         const lastRecords = await Promise.all(gameIds.map(async gameId=> await getLastGameRecord(gameId)));
-        const gamesData = lastRecords.map(record => ({
+        const gamesData = lastRecords.filter(record => record !== undefined).map(record => ({
             ...record,
             drawTurn: record.drawer_id && !record.drawing_done,
             turnUser: (record.drawer_id && !record.drawing_done)? record.drawer_id: record.target_word === null ? record.guesser_id : null,
