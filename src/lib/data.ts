@@ -452,7 +452,6 @@ export async function createFreshShufflePrompts(user_id:string, numGames:number=
 
 export async function fetchAvailableDrawings(gameIds:string[]) {
     try {
-        checkExpiredShuffleDrawings();
         if (gameIds.length === 0) {
             return {drawings: {}, nextPlayers: {}};
         }
@@ -627,7 +626,7 @@ export async function checkExpiredShuffleDrawings(gameIds?:string[]) {
                 // todo: dont do this for sequences with too many turns already
                 const data = await sql<GameShuff>`select * from shuffle_games where id=${shuffleGameId}`;
                 const game = data.rows[0];
-                if (game === null) {
+                if (!game) {
                     continue;
                 }
                 if (game.draw_turn) {
