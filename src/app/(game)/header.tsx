@@ -19,7 +19,7 @@ export default function Header() {
                                    className='inline-block'
                                    variant={'blue'}
                                    onClick={() => router.push('/shuffle')}>
-                        Shuffle
+                        Shuffle Play
                     </ButtonOverlay>
                 </div>
                 :

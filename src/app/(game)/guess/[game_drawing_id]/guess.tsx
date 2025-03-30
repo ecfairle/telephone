@@ -8,8 +8,8 @@ import {useEffect, useState} from "react";
 
 export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawing, imageUrl: string}) {
     const router = useRouter();
-    const calculateExpiringMinLeft = (drawingUpdatedAt:Date) => {
-        const timeDiff = new Date(Date.now()).getTime() - drawingUpdatedAt.getTime();
+    const calculateExpiringMinLeft = (drawingUpdatedAt:Date|string) => {
+        const timeDiff = new Date(Date.now()).getTime() - new Date(drawingUpdatedAt).getTime();
         return 30 - Math.floor(timeDiff / 1000 / 60) % 60;
     }
     const [expiryMinLeft, setExpiryMinLeft] = useState(calculateExpiringMinLeft(gameDrawing.updated_at));
@@ -36,7 +36,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
             })
 
         })
-        if (gameDrawing.room_id !== null) {
+        if (gameDrawing.room_id) {
             router.push(`/room/${gameDrawing.room_id}`);
         } else {
             router.push(`/shuffle`);
@@ -46,7 +46,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
 
     return (
             <div className='container mx-auto max-w-fit box-sizing'>
-                {gameDrawing.room_id === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
+                {!gameDrawing.room_id && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
                 <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
                     <label>Guess: <input className={'rounded-xl border-black border w-80 pl-2'} name="guess" autoComplete="off"/></label>
                     <Button

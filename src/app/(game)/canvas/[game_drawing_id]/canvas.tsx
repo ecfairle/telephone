@@ -105,7 +105,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
         }
     }
     const calculateExpiringMinLeft = (drawingUpdatedAt:Date) => {
-        const timeDiff = new Date(Date.now()).getTime() - drawingUpdatedAt.getTime();
+        const timeDiff = new Date(Date.now()).getTime() - new Date(drawingUpdatedAt).getTime();
         return 30 - Math.floor(timeDiff / 1000 / 60) % 60;
     }
     const [expiryMinLeft, setExpiryMinLeft] = useState(calculateExpiringMinLeft(drawing.updated_at));
@@ -119,7 +119,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
         <section className='py-10 p-5'>
             <canvas id="myCanvas" ref={tempCanvasRef} width="500" height="500" className={'hidden'}></canvas>
             <div className='container mx-auto max-w-fit justify-center text-center'>
-                {roomId === null && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
+                {!roomId && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas

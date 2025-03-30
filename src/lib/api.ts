@@ -145,3 +145,9 @@ export async function pullShuffle() {
         })
     })
 }
+
+export async function getShuffleGames() {
+    return await fetch(`http://localhost:3000/shuffle_games`, {
+        method: 'GET'
+    })
+}
