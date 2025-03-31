@@ -789,7 +789,9 @@ export async function getShuffleGames(user_id:string) {
         if (cachedGamesData) {console.log('cached shuffle games +++ ', JSON.parse(cachedGamesData));}
 
         if (cachedGamesData) {
-            return JSON.parse(cachedGamesData);
+            const parsedGamesData = JSON.parse(cachedGamesData);
+            checkExpiredShuffleDrawings(parsedGamesData.map((game:GameDrawing) => game.game_id));
+            return parsedGamesData;
         }
         const data = await sql`SELECT * FROM shuffle_game_users WHERE user_id=${user_id} order by created_at desc`;
         const gameIds = data.rows.map(row => row.orig_game_id);
