@@ -622,7 +622,7 @@ export async function checkExpiredShuffleDrawings(gameIds?:string[]) {
             if (!expiryTime) {
                 continue;
             }
-            if (new Date().getTime() > parseInt(expiryTime)) {
+            if (dateTimeAtPST().getTime() > parseInt(expiryTime)) {
                 // todo: dont do this for sequences with too many turns already
                 const data = await sql<GameShuff>`select * from shuffle_games where id=${shuffleGameId}`;
                 const game = data.rows[0];
