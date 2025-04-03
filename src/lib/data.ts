@@ -8,9 +8,10 @@ import { promises as fs } from 'fs';
 import {getSignedUrl} from "@/lib/gcs";
 import redis from "@/lib/redis";
 import { format, toZonedTime } from 'date-fns-tz';
+import qstash from "@/lib/qstash";
 
 const MAX_SHUFFLE_GAME_LENGTH = 8;
-const SHUFFLE_GAME_EXPIRY_MIN = 30;
+const SHUFFLE_GAME_EXPIRY_MIN = 1;
 
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
@@ -232,9 +233,9 @@ export async function fetchGames(user_id:string, room_id:string) {
     try {
         const cachedGames = await redis.get('room_games_' + room_id + dateAtPST());
         if (cachedGames !== null) {
-            console.log('cache hit for games in room: ' + room_id)
             return JSON.parse(cachedGames);
         }
+        console.log('cache miss for games in room: ' + room_id);
         const data = await sql`
             SELECT g.game_id, users.name, 
                    TO_CHAR(play_date, 'YYYY-MM-DD')
@@ -316,9 +317,9 @@ export async function getRoomies(room_id:string) {
     try {
         const cachedUsers = await redis.get('roomies_' + room_id);
         if (cachedUsers !== null) {
-            console.log('cache hit for room: '+ room_id);
             return JSON.parse(cachedUsers);
         }
+        console.log('cache miss for room: '+ room_id);
         const users = await sql`
 SELECT users.* FROM users JOIN user_rooms on user_rooms.room_id=${room_id} and user_rooms.user_id=users.id`;
         await redis.set('roomies_' + room_id, JSON.stringify(users.rows));
@@ -478,13 +479,13 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
             ...prev, [v.game_id]: v.next_players
         } : prev), {});
 
-        for (const drawings of cachedDrawings) {
-            console.log('cache hit for game: ', drawings['game_id']);
-        }
-
         const uncachedGameIds = gameIds.filter((gameId) => !Object.keys(cachedDrawingsByGameId).includes(gameId));
         if (uncachedGameIds.length === 0) {
             return {drawings: cachedDrawingsByGameId, nextPlayers: cachedNextPlayersByGameId};
+        }
+
+        for (const gameId of uncachedGameIds) {
+            console.log('cache miss for game: ', gameId);
         }
 
         const data = await Promise.all(uncachedGameIds.map(async (gameId) =>
@@ -605,7 +606,7 @@ export async function unreserveGuess(gameId:string) {
             return;
         }
         await sql`delete from game_drawings where id=${lastRecord.id}`;
-        await sql`update shuffle_games set available=true draw_turn=false where id=${lastRecord.game_id}`
+        await sql`update shuffle_games set available=true where id=${lastRecord.game_id}`
         await sql`delete from shuffle_game_users where orig_game_id = ${gameId} and user_id=${lastRecord.guesser_id}`;
         await redis.del(`shuffle_games_${lastRecord.guesser_id}`);
     } catch (error) {
@@ -623,26 +624,34 @@ export async function checkExpiredShuffleDrawings(gameIds?:string[]) {
                 continue;
             }
             if (dateTimeAtPST().getTime() > parseInt(expiryTime)) {
-                // todo: dont do this for sequences with too many turns already
-                const data = await sql<GameShuff>`select * from shuffle_games where id=${shuffleGameId}`;
-                const game = data.rows[0];
-                if (!game) {
-                    continue;
-                }
-                if (game.draw_turn) {
-                    await unreserveDrawing(shuffleGameId);
-                } else {
-                    await unreserveGuess(shuffleGameId);
-                }
+                console.log(`Sending game ${shuffleGameId} to be unreserved`);
+                await qstash.publishJSON({
+                    url: `${process.env.NEXT_PUBLIC_SITE_URL}/game_expiry`,
+                    body: {shuffleGameId},
+                });
                 await redis.del('game_drawings_expiry_' + shuffleGameId);
-                await redis.sRem('shuffle_games_reserved', shuffleGameId);
-                await redis.del('game_drawings_' + shuffleGameId + dateAtPST());
             }
         }
     } catch (error) {
         console.log(error);
         throw new Error('Failed to checked reserved drawings expiry');
     }
+}
+
+export async function unreserveShuffle(shuffleGameId:string) {
+    const data = await sql<GameShuff>`select * from shuffle_games where id=${shuffleGameId}`;
+    const game = data.rows[0];
+    if (!game) {
+        return;
+    }
+    console.log(`Expiring ${shuffleGameId} - ${game.draw_turn ? 'draw turn':'guess turn'}`);
+    if (game.draw_turn) {
+        await unreserveDrawing(shuffleGameId);
+    } else {
+        await unreserveGuess(shuffleGameId);
+    }
+    await redis.sRem('shuffle_games_reserved', shuffleGameId);
+    await redis.del('game_drawings_' + shuffleGameId + dateAtPST());
 }
 
 const getLastGameRecord = async (gameId:string) =>  {
@@ -689,9 +698,12 @@ export async function pullShuffle(user_id:string) {
             drawTurns.push(...availableDrawTurnsOld.rows);
         }
         const drawGameIds = drawTurns.map(row=>row.orig_game_id);
-
-        const newGameIds = await createFreshShufflePrompts(user_id, 1);
-        drawGameIds.push(...newGameIds);
+        console.log(`pull for user ${user_id}`)
+        if (drawGameIds.length < TOTAL_DRAWS_SHUFFLE) {
+            const newGameIds = await createFreshShufflePrompts(user_id, 1);
+            drawGameIds.push(...newGameIds);
+            console.log(`fresh prompt: `, drawGameIds);
+        }
 
         const availableShuffleDrawGames = await Promise.all(drawTurns.map(async (gs) =>
             {
@@ -704,7 +716,6 @@ export async function pullShuffle(user_id:string) {
         const lastEntriesDrawTurn = await Promise.all(
             availableShuffleDrawGames.map(game => game.id).map(getLastGameRecord));
         for (const drawing of lastEntriesDrawTurn) {
-            console.log('dr--', drawing.id)
             // check if game hasn't been assigned yet
             if (!drawing.target_word || drawing.drawer_id !== null) continue;
 
@@ -716,6 +727,7 @@ export async function pullShuffle(user_id:string) {
                 (new Date(dateTimeAtPST().getTime() + SHUFFLE_GAME_EXPIRY_MIN*60000)).getTime());
             await redis.sAdd('shuffle_games_reserved', drawing.game_id);
             await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
+            console.log(`draw turn: `, drawing.id);
         }
 
 
@@ -732,12 +744,11 @@ export async function pullShuffle(user_id:string) {
                     select orig_game_id from shuffle_game_users where user_id=${user_id}
                     ) AND draw_turn=false AND available=true AND updated_at <= current_timestamp - INTERVAL '1 DAY'
                 GROUP BY orig_game_id ORDER BY MIN(created_at) LIMIT ${TOTAL_GUESS_SHUFFLE}`;
-            guessTurns.concat(availableGuessTurnsOld.rows);
+            guessTurns.push(...availableGuessTurnsOld.rows);
         }
 
-
         const guessGameIds = guessTurns.map(row=>row.orig_game_id);
-        console.log('GgIds ', guessGameIds);
+
         const availableShuffleGuessGames = await Promise.all(guessTurns.map(async (gs) =>
         {
             const firstGame = await sql<GameShuff>`
@@ -745,11 +756,9 @@ export async function pullShuffle(user_id:string) {
             return firstGame.rows[0];
         }
         ));
-        console.log('GgIdsSSS ', availableShuffleGuessGames.map(row=>row.id));
         const lastEntries = await Promise.all(
             availableShuffleGuessGames.map(game => game.id).map(getLastGameRecord));
         for (const drawing of lastEntries) {
-            console.log('d--', drawing.id)
             // check if game hasn't been assigned yet
             if (!drawing.drawing_done || drawing.guesser_id !== null) continue;
 
@@ -762,6 +771,7 @@ export async function pullShuffle(user_id:string) {
                 (new Date(dateTimeAtPST().getTime() + SHUFFLE_GAME_EXPIRY_MIN*60000)).getTime());
             await redis.sAdd('shuffle_games_reserved', drawing.game_id);
             await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
+            console.log(`guess turn: `, drawing.id);
         }
         await redis.del(`shuffle_games_${user_id}`);
 
@@ -786,7 +796,6 @@ export async function pullShuffle(user_id:string) {
 export async function getShuffleGames(user_id:string) {
     try {
         const cachedGamesData = await redis.get(`shuffle_games_${user_id}`);
-        if (cachedGamesData) {console.log('cached shuffle games +++ ', JSON.parse(cachedGamesData));}
 
         if (cachedGamesData) {
             const parsedGamesData = JSON.parse(cachedGamesData);
