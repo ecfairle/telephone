@@ -677,8 +677,8 @@ const getLastGameRecord = async (gameId:string) =>  {
     return lastDrawing;
 }
 
-const TOTAL_DRAWS_SHUFFLE = 2;
-const TOTAL_GUESS_SHUFFLE = 3;
+const TOTAL_DRAWS_SHUFFLE = 1;
+const TOTAL_GUESS_SHUFFLE = 1;
 export async function pullShuffle(user_id:string) {
     try {
         const availableDrawTurnsFresh = await sql<GameShuff>`
