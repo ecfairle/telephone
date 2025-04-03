@@ -11,7 +11,7 @@ import { format, toZonedTime } from 'date-fns-tz';
 import qstash from "@/lib/qstash";
 
 const MAX_SHUFFLE_GAME_LENGTH = 8;
-const SHUFFLE_GAME_EXPIRY_MIN = 1;
+const SHUFFLE_GAME_EXPIRY_MIN = 30;
 
 export async function reserveGameDrawing(game_drawing_id:string, user_id:string) {
     try {
