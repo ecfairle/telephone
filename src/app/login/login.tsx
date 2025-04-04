@@ -15,7 +15,10 @@ export default function LoginPage() {
     }, [session]);
 
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.has('room_id')? `/join_room/${searchParams.get('room_id')}`: '/';
+    let callbackUrl = searchParams.has('room_id')? `/join_room/${searchParams.get('room_id')}`: '/';
+    if (searchParams.has('shuffle')) {
+        callbackUrl = '/shuffle';
+    }
     console.log('CALLBACK', callbackUrl)
     return (
         <div className={'m-5 flex text-center justify-center '}>

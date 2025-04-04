@@ -7,7 +7,7 @@ import Shuffle from './shuffle'
 export default async function Home() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.userId) {
-        return redirect('/login')
+        return redirect('/login?shuffle=1');
     }
     const userId = session.user.userId;
     return <Shuffle userId={userId} />
