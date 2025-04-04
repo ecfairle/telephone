@@ -760,7 +760,7 @@ export async function pullShuffle(user_id:string) {
             availableShuffleGuessGames.map(game => game.id).map(getLastGameRecord));
         for (const drawing of lastEntries) {
             // check if game hasn't been assigned yet
-            if (!drawing.drawing_done || drawing.guesser_id !== null) continue;
+            if (!drawing.drawing_done) continue;
 
             await sql<GameDrawing>`
                 INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
