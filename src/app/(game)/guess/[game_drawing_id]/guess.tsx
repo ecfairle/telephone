@@ -2,12 +2,13 @@
 import {GameDrawing} from "@/lib/data_definitions";
 import {useRouter} from "next/navigation";
 import { Button } from '@/components/button'
-import { SendHorizonal } from 'lucide-react'
-import {useEffect, useState} from "react";
+import {Loader, SendHorizonal} from 'lucide-react'
+import React, {useEffect, useState} from "react";
 
 
 export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawing, imageUrl: string}) {
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
     const calculateExpiringMinLeft = (drawingUpdatedAt:Date|string) => {
         const timeDiff = new Date(Date.now()).getTime() - new Date(drawingUpdatedAt).getTime();
         return 30 - Math.floor(timeDiff / 1000 / 60) % 60;
@@ -22,7 +23,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-
+        setLoading(true);
         const form = e.target;
         const formData = new FormData(form as HTMLFormElement);
         await fetch(`/save_guess/${gameDrawing.id}`, {
@@ -41,7 +42,6 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
         } else {
             router.push(`/shuffle`);
         }
-
     }
 
     return (
@@ -52,8 +52,10 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
                     <Button
                         size='xl'
                         type='submit'
-                        className={'m-5 bg-blue-500 text-white'}>
-                        <SendHorizonal size={25}/>
+                        variant={'blue'}
+                        className={'m-5'}
+                        disabled={loading}>
+                        {loading? <Loader className={'animate-spin'} size={25}/> :<SendHorizonal size={25}/>}
                     </Button>
                 </form>
                 <img alt='drawing' src={`${imageUrl}`} className='border border-black'/>

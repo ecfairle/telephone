@@ -8,7 +8,7 @@ import {
 } from 'react-sketch-canvas'
 
 import { Button } from '@/components/button'
-import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal} from 'lucide-react'
+import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal, Loader} from 'lucide-react'
 import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -28,6 +28,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
     console.log('user id' + session?.data?.user?.userId)
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const tempCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [submitted, setSubmitted] = useState(false);
     const [strokeColor, setStrokeColor] = useState('#000000')
     const [strokeWidth, setStrokeWidth] = useState(4)
     const [eraseMode, setEraseMode] = useState(false)
@@ -78,6 +79,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
     }
 
     async function handleSave() {
+        setSubmitted(true);
         const dataURL = await canvasRef.current?.exportImage('png');
         const image = new Image();
         if (!dataURL) {
@@ -269,13 +271,14 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
                     </div>
                 </div>
                 <Button
-                    className='m-4 bg-blue-500 text-white'
+                    className='m-4'
                     size='xl'
                     type='button'
-                    variant='outline'
+                    variant='blue'
                     onClick={handleSave}
+                    disabled={submitted}
                 >
-                    <SendHorizonal size={25}/>
+                    {submitted? <Loader className={'animate-spin'} size={25}/>:<SendHorizonal size={25}/>}
                 </Button>
             </div>
         </section>
