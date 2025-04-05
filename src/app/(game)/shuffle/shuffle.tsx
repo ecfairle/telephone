@@ -28,19 +28,25 @@ export default function Shuffle({userId}:{userId:string}) {
     }, []);
     const myTurnGames = games.filter(game => game.turnUser === userId);
     const pastGames = games.filter(game => game.turnUser !== userId);
-    if (myTurnGames.length > 0) {
-        const drawing = myTurnGames[0];
-        if (myTurnGames[0].drawTurn) return <Canvas
-            drawing={drawing}
-            secretWord={drawing.target_word}/>
-        else return <Guess gameDrawing={drawing} imageUrl={drawing.signedUrl}/>
-    }
     const updates = pastGames.toSorted(
         (a,b) => new Date(b.updated_at).valueOf() - new Date(a.updated_at).valueOf())
     return (
-        pullLoading? <div className='container mx-auto max-w-fit justify-center text-center flex h-screen'><Loader className={'text-blue-500 animate-spin m-auto'} size={100}/></div> :
-                <div>
-
+        pullLoading? <div className='container mx-auto max-w-fit justify-center text-center flex h-screen'>
+                <Loader className={'text-blue-500 animate-spin m-auto'} size={100}/></div>
+            :
+            <div>
+                {myTurnGames.length > 0?
+                    myTurnGames.map((drawing, idx) => (
+                        <div className={idx !== 0 ? 'hidden' : ''} key={drawing.id}>
+                            {drawing.drawTurn ?
+                            <Canvas
+                                drawing={drawing}
+                                secretWord={drawing.target_word}/>
+                            :
+                            <Guess gameDrawing={drawing} imageUrl={drawing.signedUrl}/>}
+                        </div>))
+                    :
+                    <div>
                     <div className={"space-x-3"}>
                         <Button variant={'blue'} size={'lg'} disabled={pullLoading} onClick={async () => {
                             setPullLoading(true);
@@ -57,16 +63,13 @@ export default function Shuffle({userId}:{userId:string}) {
                         <Button onClick={() => setUpdatesMode(false)} disabled={!updatesMode}>All Games</Button>
                         <Button onClick={() => setUpdatesMode(true)} disabled={updatesMode}>Updates</Button>
                     </div>
-                    {myTurnGames.map((game, idx) => (
-                        <div key={idx}>
-                            <GamePanels userColors={{}} userId={userId} gameId={game.game_id}/>
-                        </div>
-                    ))}
                     {(updatesMode ? updates : pastGames).map((game, idx) => (
                         <div key={idx}>
                             <GamePanels userColors={{}} userId={userId} gameId={game.game_id}/>
                         </div>
                     ))}
-                </div>
+                    </div>
+                }
+            </div>
     )
 }
