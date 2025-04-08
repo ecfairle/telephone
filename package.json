@@ -38,7 +38,7 @@
     "react-media-recorder": "^1.7.1",
     "react-overlays": "^5.2.1",
     "react-redux": "^9.1.2",
-    "react-sketch-canvas": "file:react-sketch-canvas-7.0.0-next.4.tgz",
+    "react-sketch-canvas": "file:react-sketch-canvas-fix.4.tgz",
     "redis": "^4.7.0",
     "tailwind-merge": "^2.5.5",
     "uuid": "^11.0.3"
