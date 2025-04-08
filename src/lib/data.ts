@@ -618,9 +618,12 @@ export async function unreserveGuess(gameId:string) {
 export async function checkExpiredShuffleDrawings(gameIds?:string[]) {
     try {
         const shuffleGames = gameIds? gameIds : await getAllShuffleGames();
+        const expiredGameIds = [];
         for (const shuffleGameId of shuffleGames) {
             const expiryTime = await redis.get('game_drawings_expiry_' + shuffleGameId);
             if (!expiryTime) {
+                // all active shuffle turns should have an entry
+                expiredGameIds.push(shuffleGameId);
                 continue;
             }
             if (dateTimeAtPST().getTime() > parseInt(expiryTime)) {
@@ -630,8 +633,10 @@ export async function checkExpiredShuffleDrawings(gameIds?:string[]) {
                     body: {shuffleGameId},
                 });
                 await redis.del('game_drawings_expiry_' + shuffleGameId);
+                expiredGameIds.push(shuffleGameId);
             }
         }
+        return expiredGameIds;
     } catch (error) {
         console.log(error);
         throw new Error('Failed to checked reserved drawings expiry');
@@ -799,8 +804,9 @@ export async function getShuffleGames(user_id:string) {
 
         if (cachedGamesData) {
             const parsedGamesData = JSON.parse(cachedGamesData);
-            checkExpiredShuffleDrawings(parsedGamesData.map((game:GameDrawing) => game.game_id));
-            return parsedGamesData;
+            const activeGames = parsedGamesData.filter((game:{turnUser:string|null}) => game.turnUser === user_id);
+            const expiredGameIds = await checkExpiredShuffleDrawings(activeGames.map((game:GameDrawing) => game.game_id));
+            return parsedGamesData.filter((game:GameDrawing) => !expiredGameIds.includes(game.game_id));
         }
         const data = await sql`SELECT * FROM shuffle_game_users WHERE user_id=${user_id} order by created_at desc`;
         const gameIds = data.rows.map(row => row.orig_game_id);
@@ -815,8 +821,10 @@ export async function getShuffleGames(user_id:string) {
             signedUrl: await getSignedUrl(game.prev_game_drawing_id)
         })))
         await redis.set(`shuffle_games_${user_id}`, JSON.stringify(gamesDataWithSignedUrl));
-        await checkExpiredShuffleDrawings(gamesDataWithSignedUrl.map(game => game.game_id));
-        return gamesDataWithSignedUrl;
+        const activeGames = gamesDataWithSignedUrl.filter(game => game.turnUser === user_id);
+        const expiredGameIds = await checkExpiredShuffleDrawings(activeGames.map(game => game.game_id));
+        return gamesDataWithSignedUrl.filter(
+            (game:GameDrawing) => !expiredGameIds.includes(game.game_id));
     } catch(error) {
         console.log(error);
         throw new Error('Failed to get shuffle games');
