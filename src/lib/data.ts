@@ -490,8 +490,8 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
         }
 
         const data = await Promise.all(uncachedGameIds.map(async (gameId) =>
-            await sql<GameDrawing & {is_shuffle_game: boolean}>`
-            SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name, (shuffle_games.id is not null) as is_shuffle_game
+            await sql<GameDrawing & {is_shuffle_game: boolean, shuffle_available: boolean|null}>`
+            SELECT game_drawings.*, guesser.name as guesser_name, drawer.name as drawer_name, shuffle_games.available as shuffle_available, (shuffle_games.id is not null) as is_shuffle_game
                    FROM game_drawings 
                     LEFT JOIN users guesser on guesser.id = game_drawings.guesser_id
                     LEFT JOIN users drawer on drawer.id = game_drawings.drawer_id
@@ -502,7 +502,7 @@ export async function fetchAvailableDrawings(gameIds:string[]) {
         for (const queryRes of data) {
             const thisGameDrawings:GameDrawing[] = [];
             const drawingsByPrevId = queryRes.rows.reduce(
-                (prev: {[prev_id: string]: GameDrawing & {is_shuffle_game: boolean}}, cur) => {
+                (prev: {[prev_id: string]: GameDrawing & {is_shuffle_game: boolean, shuffle_available: boolean|null}}, cur) => {
                 return {...prev, [cur.prev_game_drawing_id]: cur}
             }, {})
             const firstDrawing = queryRes.rows.find(d => d.prev_game_drawing_id === null);

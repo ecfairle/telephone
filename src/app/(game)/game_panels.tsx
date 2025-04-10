@@ -11,7 +11,7 @@ export default function GamePanels ({userColors, userId, gameId, roomId} : {user
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
-    const [drawings, setDrawings] = useState<GameDrawing[]>([]);
+    const [drawings, setDrawings] = useState<(GameDrawing&{shuffle_available:boolean})[]>([]);
     const [nextPlayer, setNextPlayer] = useState<string|null>(null);
     console.log('gameId ', gameId);
     const turns = [];
@@ -19,7 +19,7 @@ export default function GamePanels ({userColors, userId, gameId, roomId} : {user
         const fetchGameData = async () => {
             try {
                 const res = await getGame(gameId);
-                const result:{drawings: {[game_id:string]: GameDrawing[]}, next_players: {[game_id:string]: User} } = await res.json();
+                const result:{drawings: {[game_id:string]: (GameDrawing&{shuffle_available:boolean})[]}, next_players: {[game_id:string]: User} } = await res.json();
                 setDrawings(result['drawings'][gameId]);
                 if (gameId in result['next_players'] && result['next_players'][gameId] !== null)  setNextPlayer(result['next_players'][gameId]['name']);
                 else setNextPlayer(null);
@@ -92,7 +92,8 @@ export default function GamePanels ({userColors, userId, gameId, roomId} : {user
                     {alreadyFinished &&
                 <GameOverview userColors={userColors} firstDrawing={firstDrawing} gameDone={gameDone} alreadyFinished={alreadyFinished}
                               turns={turns} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer}/>}
-                <GameOverviewPrePlay userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} gameDone={gameDone}/>
+                <GameOverviewPrePlay userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} gameDone={gameDone}
+                shuffleAvailable={lastDrawing.shuffle_available}/>
                 </div>
                 :
                 <div className='w-40 h-40 ml-3'>
@@ -116,7 +117,7 @@ export default function GamePanels ({userColors, userId, gameId, roomId} : {user
         </div>
     )
 }
-function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer, gameDone} : {gameDone: boolean, userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string}) {
+function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer, gameDone, shuffleAvailable} : {gameDone: boolean, userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string, shuffleAvailable:boolean}) {
     return (<div className={'inline-flex'}>
         {!gameDone ?
         <div className='w-40 h-40 ml-3'><UserTag userColors={userColors} name={curPlayer}/>
@@ -126,8 +127,8 @@ function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer, gam
             {nextPlayer && <span><UserTag userColors={userColors}
                                           name={nextPlayer}/>
                 {` is ${isGuessing ? "drawing" : "guessing"} next`}</span>}</div>
-            :null}
-    </div>)
+            :shuffleAvailable && <div>{`Waiting for someone to ${isGuessing ? "draw" : "guess"}`}</div>}
+</div>)
 }
 
 function GameOverview({userColors, firstDrawing, alreadyFinished, turns} :
