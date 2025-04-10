@@ -9,6 +9,7 @@ import React, {useEffect, useState} from "react";
 export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawing, imageUrl: string}) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string|null>(null);
     const calculateExpiringMinLeft = (drawingUpdatedAt:Date|string) => {
         const timeDiff = new Date(Date.now()).getTime() - new Date(drawingUpdatedAt).getTime();
         return 30 - Math.floor(timeDiff / 1000 / 60) % 60;
@@ -26,6 +27,12 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
         setLoading(true);
         const form = e.target;
         const formData = new FormData(form as HTMLFormElement);
+        const guessField = (formData.get("guess") as string).toLowerCase().trim();
+        if (guessField === "") {
+            setError('Can\'t submit empty guess');
+            setLoading(false);
+            return;
+        }
         await fetch(`/save_guess/${gameDrawing.id}`, {
             method: 'POST',
                 headers: {
@@ -33,7 +40,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
             },
             body: JSON.stringify({
                 game_drawing_id: gameDrawing.id,
-                guess: formData.get("guess")
+                guess: guessField
             })
 
         })
@@ -47,8 +54,9 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
     return (
             <div className='container mx-auto max-w-fit box-sizing'>
                 {!gameDrawing.room_id && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
+                {error && <div className='text-red-500 text-center'>{error}</div>}
                 <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
-                    <label>Guess: <input className={'rounded-xl border-black border w-80 pl-2'} name="guess" autoComplete="off"/></label>
+                    <label>Guess: <input className={'rounded-xl border-black border w-80 pl-2'} name="guess" autoComplete="off" maxLength={17}/></label>
                     <Button
                         size='xl'
                         type='submit'

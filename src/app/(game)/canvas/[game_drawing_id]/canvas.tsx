@@ -25,9 +25,10 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
     if (!session) {
         router.push('/login');
     }
-    console.log('user id' + session?.data?.user?.userId)
+    console.log('user id' + session?.data?.user?.userId);
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const tempCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [error, setError] = useState<string|null>(null);
     const [submitted, setSubmitted] = useState(false);
     const [strokeColor, setStrokeColor] = useState('#000000')
     const [strokeWidth, setStrokeWidth] = useState(4)
@@ -80,6 +81,12 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
 
     async function handleSave() {
         setSubmitted(true);
+        const paths = await canvasRef.current?.exportPaths();
+        if (paths?.length === 0) {
+            setSubmitted(false);
+            setError('Can\'t submit empty canvas');
+            return;
+        }
         const dataURL = await canvasRef.current?.exportImage('png');
         const image = new Image();
         if (!dataURL) {
@@ -116,7 +123,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
             setExpiryMinLeft(calculateExpiringMinLeft(drawing.updated_at));
         }, 3000);
         return () => clearInterval(intervalId);
-    }, [drawing])
+    }, [drawing]);
     return (
         <section className='py-10 p-5'>
             <canvas id="myCanvas" ref={tempCanvasRef} width="500" height="500" className={'hidden'}></canvas>
@@ -270,12 +277,17 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
                         </Button>
                     </div>
                 </div>
+                {error && <div className='text-red-500'>{error}</div>}
                 <Button
                     className='m-4'
                     size='xl'
                     type='button'
                     variant='blue'
-                    onClick={handleSave}
+                    onClick={() => {
+                        if (window.confirm("Submit drawing?")) {
+                            handleSave();
+                        }
+                    }}
                     disabled={submitted}
                 >
                     {submitted? <Loader className={'animate-spin'} size={25}/>:<SendHorizonal size={25}/>}

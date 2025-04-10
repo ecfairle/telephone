@@ -102,11 +102,12 @@ export async function updateShuffleGame(game_drawing_id:string) {
     UPDATE shuffle_games set draw_turn=false, available=true from game_drawings where game_drawings.id=${game_drawing_id} AND game_drawings.game_id=shuffle_games.id RETURNING shuffle_games.*`;
 }
 
-export async function setDrawingDone(game_drawing_id:string) {
+export async function setDrawingDone(game_drawing_id:string, user_id:string) {
     try {
         const data = await sql<GameDrawing>`
         UPDATE game_drawings SET drawing_done=true
         WHERE game_drawings.id = ${game_drawing_id} AND game_drawings.drawing_done=false
+            AND drawer_id=${user_id}
         RETURNING *`;
         const drawing = data.rows.length > 0 ? data.rows[0] : null;
         if (drawing === null) {
@@ -178,12 +179,12 @@ WHERE og.id=${game_drawing_id}`;
     }
 }
 
-export async function setGuess(game_drawing_id:string, guess: string) {
+export async function setGuess(user_id:string, game_drawing_id:string, guess: string) {
     try {
         const data = await sql<GameDrawing & {guesser_count:string, drawer_count:string}>`
             SELECT game_drawings.*, count(distinct(gdg.drawer_id)) as drawer_count, count(distinct(gdg.guesser_id)) as guesser_count FROM game_drawings
             LEFT JOIN game_drawings gdg on gdg.game_id=game_drawings.game_id
-            WHERE game_drawings.id = ${game_drawing_id} group by game_drawings.id`;
+            WHERE game_drawings.id = ${game_drawing_id} AND game_drawings.guesser_id=${user_id} group by game_drawings.id`;
         const gameDrawing = data.rows.length > 0 ? data.rows[0] : null;
         if (gameDrawing === null) {
             throw new Error(`Game drawing not found: ${game_drawing_id}`);
