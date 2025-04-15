@@ -2,7 +2,6 @@
 import {Button} from "@/components/button";
 import {signIn, signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
-import ButtonOverlay from "@/components/ButtonOverlay";
 
 export default function Header() {
     const { data: session } = useSession();
@@ -14,13 +13,11 @@ export default function Header() {
                 <div className={'space-x-3 flex'}>
                     <span className={'mr-5'}>{session.user.name}</span>
                     <Button onClick={() => signOut()}>Sign Out</Button>
-                    <Button onClick={() => router.push('/')}>Home</Button>
-                    <ButtonOverlay tooltipText={'Play with strangers'}
-                                   className='inline-block'
-                                   variant={'blue'}
+                    <Button onClick={() => router.push('/')}>Play with friends</Button>
+                    <Button variant={'blue'}
                                    onClick={() => router.push('/shuffle')}>
-                        Shuffle Play
-                    </ButtonOverlay>
+                        Play with strangers
+                    </Button>
                 </div>
                 :
                 <Button onClick={() => signIn('discord', { callbackUrl: '/' })}>Sign In</Button>
