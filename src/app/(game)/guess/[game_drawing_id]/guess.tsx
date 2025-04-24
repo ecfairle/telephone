@@ -28,8 +28,13 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
         const form = e.target;
         const formData = new FormData(form as HTMLFormElement);
         const guessField = (formData.get("guess") as string).toLowerCase().trim();
-        if (guessField === "") {
-            setError('Can\'t submit empty guess');
+        if (guessField.length < 2) {
+            setError('Guess too short');
+            setLoading(false);
+            return;
+        }
+        if (!guessField.match(/^[a-z\s]+$/)) {
+            setError('Invalid characters');
             setLoading(false);
             return;
         }
