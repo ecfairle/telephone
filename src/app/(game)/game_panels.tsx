@@ -1,36 +1,17 @@
 'use client'
 import {GameDrawing, User} from "@/lib/data_definitions";
-import Link from "next/link";
-import {useEffect, useState} from "react";
-import {getGame} from "@/lib/api";
 import {Button} from "@/components/button";
 import {Brush} from "lucide-react";
 
 
-export default function GamePanels ({userColors, userId, gameId, roomId} : {userColors: {[name:string]: string }, userId: string, gameId: string, roomId?: string}) {
+export default function GamePanels ({userColors, userId, gameId, roomId, drawings, nextPlayerUser, setIsPlaying} : {userColors: {[name:string]: string }, userId: string, gameId: string, roomId?: string, drawings: (GameDrawing&{shuffle_available:boolean})[], nextPlayerUser: User|null, setIsPlaying: (gameId: string|null) => void}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
-    const [drawings, setDrawings] = useState<(GameDrawing&{shuffle_available:boolean})[]>([]);
-    const [nextPlayer, setNextPlayer] = useState<string|null>(null);
-    console.log('gameId ', gameId);
+    let nextPlayer:string|null;
+    if (nextPlayerUser !== null && nextPlayerUser !== null)  nextPlayer = nextPlayerUser.name;
+    else nextPlayer = null
     const turns = [];
-    useEffect(() => {
-        const fetchGameData = async () => {
-            try {
-                const res = await getGame(gameId);
-                const result:{drawings: {[game_id:string]: (GameDrawing&{shuffle_available:boolean})[]}, next_players: {[game_id:string]: User} } = await res.json();
-                setDrawings(result['drawings'][gameId]);
-                if (gameId in result['next_players'] && result['next_players'][gameId] !== null)  setNextPlayer(result['next_players'][gameId]['name']);
-                else setNextPlayer(null);
-            } catch {
-
-            }
-        }
-        fetchGameData();
-        const intervalId = setInterval(fetchGameData, 5000); // Fetch every 5 seconds
-        return () => clearInterval(intervalId); // Cleanup on unmount
-        }, [gameId])
 
     for (const drawing of drawings) {
         if (drawing.drawer_id !== null && drawing.drawing_done) {
@@ -63,7 +44,6 @@ export default function GamePanels ({userColors, userId, gameId, roomId} : {user
         turn.isMe);
     const gameDone = (lastDrawing.target_word !== null && lastDrawing.drawer_id === null) ||
         (lastDrawing.drawing_done);
-    console.log('LAST DRAWING', lastDrawing.id);
     let curPlayer = null;
     if (lastDrawing.drawer_id === null) {
         // guess turn
@@ -99,14 +79,9 @@ export default function GamePanels ({userColors, userId, gameId, roomId} : {user
                 <div className='w-40 h-40 ml-3'>
                     {
                         myTurn ? isDrawing ?
-                                <Link
-                                    href={{
-                                        pathname: `/canvas/${lastDrawing.id}`
-                                    }}
-                                > <Button className={'bg-blue-500 text-white h-20'}>{lastDrawing.guesser_name === null ?`Draw your word!` : `Draw ${lastDrawing.guesser_name}'s guess`} <Brush
-                                    size={30}/></Button></Link> :
-                                <Link href={{pathname: `/guess/${lastDrawing.id}`}}><Button
-                                    className={'bg-blue-500 text-white h-20'}>{`Guess ${drawingsById[lastDrawing.prev_game_drawing_id].drawer_name}'s drawing! `}</Button></Link> :
+                                <Button className={'bg-blue-500 text-white h-20'} onClick={() => setIsPlaying(gameId)}>{lastDrawing.guesser_name === null ?`Draw your word!` : `Draw ${lastDrawing.guesser_name}'s guess`} <Brush
+                                    size={30}/></Button>:
+                                <Button className={'bg-blue-500 text-white h-20'} onClick={() => setIsPlaying(gameId)}>{`Guess ${drawingsById[lastDrawing.prev_game_drawing_id].drawer_name}'s drawing! `}</Button> :
                             <div><UserTag userColors={userColors} name={curPlayer}/>
                                 <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
                     }

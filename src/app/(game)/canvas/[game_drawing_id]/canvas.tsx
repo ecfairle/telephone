@@ -15,11 +15,11 @@ import { useRouter } from 'next/navigation'
 import {useSession} from "next-auth/react";
 import Dropdown from "@restart/ui/Dropdown";
 import {GameDrawing} from "@/lib/data_definitions";
+import {unreserveDrawing} from "@/lib/api";
 
 
-export default function Canvas({secretWord, drawing} : {secretWord:string, drawing:GameDrawing}) {
+export default function Canvas({secretWord, drawing, roomId} : {secretWord:string, drawing:GameDrawing, roomId?: string}) {
     const gameDrawingId = drawing.id;
-    const roomId = drawing.room_id;
     const router = useRouter();
     const session = useSession();
     if (!session) {
@@ -105,13 +105,6 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
         ctx?.drawImage(image, Math.floor((500 - image.width) / 2), 0);
         const finalDataURL = tempCanvas.toDataURL(`image/png`);
         await uploadImage(finalDataURL, `${gameDrawingId}.png`, gameDrawingId);
-
-        if (roomId) {
-            router.push(`/room/${roomId}`);
-        }
-        else {
-            router.push(`/shuffle`)
-        }
     }
     const calculateExpiringMinLeft = (drawingUpdatedAt:Date) => {
         const timeDiff = new Date(Date.now()).getTime() - new Date(drawingUpdatedAt).getTime();
@@ -292,6 +285,7 @@ export default function Canvas({secretWord, drawing} : {secretWord:string, drawi
                 >
                     {submitted? <Loader className={'animate-spin'} size={25}/>:<SendHorizonal size={25}/>}
                 </Button>
+                {!submitted && <div><Button size={"sm"} onClick={() => { unreserveDrawing(drawing.game_id); }}>Skip</Button></div>}
             </div>
         </section>
     )

@@ -4,9 +4,10 @@ import {useRouter} from "next/navigation";
 import { Button } from '@/components/button'
 import {Loader, SendHorizonal} from 'lucide-react'
 import React, {useEffect, useState} from "react";
+import { unreserveDrawing } from "@/lib/api";
 
 
-export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawing, imageUrl: string}) {
+export default function Guess({gameDrawing, imageUrl, roomId} : {gameDrawing: GameDrawing, imageUrl: string, roomId?: string}) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string|null>(null);
@@ -49,16 +50,11 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
             })
 
         })
-        if (gameDrawing.room_id) {
-            router.push(`/room/${gameDrawing.room_id}`);
-        } else {
-            router.push(`/shuffle`);
-        }
     }
 
     return (
             <div className='container mx-auto max-w-fit box-sizing'>
-                {!gameDrawing.room_id && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
+                {!roomId && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
                 {error && <div className='text-red-500 text-center'>{error}</div>}
                 <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
                     <label>Guess: <input className={'rounded-xl border-black border w-80 pl-2'} name="guess" autoComplete="off" maxLength={17}/></label>
@@ -71,6 +67,7 @@ export default function Guess({gameDrawing, imageUrl} : {gameDrawing: GameDrawin
                         {loading? <Loader className={'animate-spin'} size={25}/> :<SendHorizonal size={25}/>}
                     </Button>
                 </form>
+                {!loading && <div><Button size={"sm"} onClick={() => { unreserveDrawing(gameDrawing.game_id); }}>Skip</Button></div>}
                 <img alt='drawing' src={`${imageUrl}`} className='border border-black'/>
             </div>
         )

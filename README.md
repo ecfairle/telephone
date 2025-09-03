@@ -14,6 +14,14 @@ pnpm dev
 bun dev
 ```
 
+Run local QStash
+npx @upstash/qstash-cli dev -port=8081
+
+Connect to Neon
+docker-compose -f psql-docker-compose.yaml up -d
+docker-compose -f psql-docker-compose.yaml exec postgres-client bash
+
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/_route.ts`. The page auto-updates as you edit the file.

@@ -5,7 +5,7 @@ import {unreserveShuffle} from "@/lib/data";
 async function handler(request: NextRequest) {
     const loadedParams = await request.json();
     console.log(`QStash -- Message game_id:${loadedParams.shuffleGameId} loaded`);
-    await unreserveShuffle(loadedParams.shuffleGameId);
+    await unreserveShuffle(loadedParams.shuffleGameId, loadedParams.userId);
     return Response.json('success');
 }
 

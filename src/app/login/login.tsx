@@ -34,6 +34,11 @@ export default function LoginPage() {
                     variant='outline' className={'w-64 h-12'} onClick={() => signIn('google', {callbackUrl: callbackUrl})}>
                 Login with Google
             </Button>
+            <br/>
+            <Button type='button'
+                    variant='outline' className={'w-64 h-12'} onClick={() => signIn('anonymous', {callbackUrl: callbackUrl})}>
+                Login as Guest
+            </Button>
             </div>
             <GameBlurb/>
             </div>

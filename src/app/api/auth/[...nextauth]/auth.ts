@@ -3,6 +3,7 @@ import {NextAuthOptions} from "next-auth";
 import PostgresAdapter from "@auth/pg-adapter";
 import DiscordProvider from "next-auth/providers/discord";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 const pool = createPool();
 export const authOptions: NextAuthOptions = {
@@ -22,6 +23,22 @@ export const authOptions: NextAuthOptions = {
                     access_type: "offline",
                     response_type: "code"
                 }
+            }
+        }),
+        CredentialsProvider({
+            id: 'anonymous',
+            name: 'Anonymous',
+            credentials: {},
+            authorize: async () => {
+                const user = PostgresAdapter(pool).createUser({ 
+                    id: 'anonymous',
+                    name: 'anonymous',
+                    email: 'guest@example.com',
+                    emailVerified: null,
+                    image: null
+                })
+
+                return user
             }
         })
     ],

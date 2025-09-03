@@ -151,3 +151,15 @@ export async function getShuffleGames() {
         method: 'GET'
     })
 }
+
+export async function unreserveDrawing(shuffleGameId:string) {
+    return await fetch(`/leave_game`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            shuffleGameId
+        })})
+    }
