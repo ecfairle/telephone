@@ -30,7 +30,11 @@ export const authOptions: NextAuthOptions = {
             name: 'Anonymous',
             credentials: {},
             authorize: async () => {
-                const user = PostgresAdapter(pool).createUser({ 
+                const pg = PostgresAdapter(pool);
+                if (!pg?.createUser) {
+                    throw new Error('Postgres Adapter not configured correctly');
+                }
+                const user = pg.createUser({ 
                     id: 'anonymous',
                     name: 'anonymous',
                     email: 'guest@example.com',

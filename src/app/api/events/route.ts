@@ -2,7 +2,6 @@
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
 import { getServerSession } from 'next-auth';
 import { fetchAvailableDrawings, getShuffleGames } from '@/lib/data';
-import { NextApiRequest, NextApiResponse } from 'next';
 import { getRooms } from '@/lib/data';
 import {createClient} from "redis";
 import { GameDrawing } from "@/lib/data_definitions";
@@ -11,9 +10,9 @@ const subscriber = await createClient({url: process.env.REDIS2_REDIS_URL!})
     .on('error', err => console.log('Redis Client Error', err))
     .connect();
 // Store active user connections
-const userConnections = new Map<string, { response: NextApiResponse, games: Set<string>, roomId: string | null, lastActivity: number, controller: ReadableStreamDefaultController }>();
+const userConnections = new Map<string, { games: Set<string>, roomId: string | null, lastActivity: number, controller: ReadableStreamDefaultController }>();
 
-export async function GET(req: NextApiRequest, res: NextApiResponse) {
+export async function GET() {
     const session = await getServerSession(authOptions);
   
   if (!session?.user?.userId) {
@@ -95,7 +94,6 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
     start(controller) {
       // Store connection details, including the controller to enqueue messages
       userConnections.set(userId, {
-        response: res,
         games: new Set(userGames.map((game: GameDrawing) => game.game_id)),
         roomId: roomId,
         lastActivity: Date.now(),
