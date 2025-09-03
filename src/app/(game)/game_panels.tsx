@@ -4,7 +4,7 @@ import {Button} from "@/components/button";
 import {Brush} from "lucide-react";
 
 
-export default function GamePanels ({userColors, userId, gameId, roomId, drawings, nextPlayerUser, setIsPlaying} : {userColors: {[name:string]: string }, userId: string, gameId: string, roomId?: string, drawings: (GameDrawing&{shuffle_available:boolean})[], nextPlayerUser: User|null, setIsPlaying: (gameId: string|null) => void}) {
+export default function GamePanels ({userColors, userId, gameId, roomId, drawings, nextPlayerUser, setIsPlaying} : {userColors: {[name:string]: string }, userId: string, gameId: string, roomId?: string, drawings: (GameDrawing&{shuffle_available:boolean})[], nextPlayerUser: User|null, setIsPlaying?: (gameId: string|null) => void}) {
     let myTurn = false;
     let isDrawing = false;
     let isGuessing = false;
@@ -79,9 +79,9 @@ export default function GamePanels ({userColors, userId, gameId, roomId, drawing
                 <div className='w-40 h-40 ml-3'>
                     {
                         myTurn ? isDrawing ?
-                                <Button className={'bg-blue-500 text-white h-20'} onClick={() => setIsPlaying(gameId)}>{lastDrawing.guesser_name === null ?`Draw your word!` : `Draw ${lastDrawing.guesser_name}'s guess`} <Brush
+                                <Button className={'bg-blue-500 text-white h-20'} onClick={() => setIsPlaying && setIsPlaying(gameId)}>{lastDrawing.guesser_name === null ?`Draw your word!` : `Draw ${lastDrawing.guesser_name}'s guess`} <Brush
                                     size={30}/></Button>:
-                                <Button className={'bg-blue-500 text-white h-20'} onClick={() => setIsPlaying(gameId)}>{`Guess ${drawingsById[lastDrawing.prev_game_drawing_id].drawer_name}'s drawing! `}</Button> :
+                                <Button className={'bg-blue-500 text-white h-20'} onClick={() => setIsPlaying && setIsPlaying(gameId)}>{`Guess ${drawingsById[lastDrawing.prev_game_drawing_id].drawer_name}'s drawing! `}</Button> :
                             <div><UserTag userColors={userColors} name={curPlayer}/>
                                 <p>{`is ${isGuessing ? 'guessing' : 'drawing'}`}</p></div>
                     }

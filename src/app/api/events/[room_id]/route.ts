@@ -2,7 +2,6 @@
 import {authOptions} from "@/app/api/auth/[...nextauth]/auth";
 import { getServerSession } from 'next-auth';
 import { fetchAvailableDrawings, getShuffleGames } from '@/lib/data';
-import { NextApiRequest, NextApiResponse } from 'next';
 import { getRoomies } from '@/lib/data';
 import {createClient} from "redis";
 import { User, GameDrawing } from "@/lib/data_definitions";
@@ -163,6 +162,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
   });
 
   // Handle dynamic game/room changes published on the user's channel
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChannelChange = async (data: any) => {
     console.log('handleChannelChange', data);
     const connection = userConnections.get(userId);
@@ -175,7 +175,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
         console.log(`here: game_events:${newGameId}`)
         subscriber.subscribe(`game_events:${newGameId}`, (message: string, channel: string) => messageHandler(message, channel, connection.controller));
         connection.games.add(newGameId);
-        const gameData =  await fetchAvailableDrawings([newGameId]);
         const game = (await getShuffleGames(userId, newGameId))[0];
         connection.controller.enqueue(`data: ${JSON.stringify({
           type: 'game_joined',
@@ -190,7 +189,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
       const gameId = data.gameId;
       console.log('leave game', gameId, connection.games)
       if (gameId && connection.games.has(gameId)) {
-        subscriber.unsubscribe(`game_events:${gameId}`, (err, count) => {
+        subscriber.unsubscribe(`game_events:${gameId}`, (err) => {
              if (err) console.error('Error unsubscribing from game channel:', err);
              else console.log(`User ${userId} unsubscribed from game_events:${gameId}`);
          });
@@ -206,7 +205,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
       const gameId = data.gameId;
       console.log('leave game', gameId, connection.games)
       if (gameId && connection.games.has(gameId)) {
-        subscriber.unsubscribe(`game_events:${gameId}`, (err, count) => {
+        subscriber.unsubscribe(`game_events:${gameId}`, (err) => {
              if (err) console.error('Error unsubscribing from game channel:', err);
              else console.log(`User ${userId} unsubscribed from game_events:${gameId}`);
          });
@@ -227,7 +226,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
             console.log(`User ${userId} subscribed to room_events:${newRoomId}`);
         });
         if (connection.roomId) {
-            subscriber.unsubscribe(`room_events:${connection.roomId}`, (err, count) => {
+            subscriber.unsubscribe(`room_events:${connection.roomId}`, (err) => {
                 if (err) console.error('Error unsubscribing from old room channel:', err);
                 else console.log(`User ${userId} unsubscribed from room_events:${connection.roomId}`);
             });
@@ -245,7 +244,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     } else if (data.type === 'leave_room') {
         const roomId = data.roomId;
         if (roomId && connection.roomId === roomId) {
-            subscriber.unsubscribe(`room_events:${roomId}`, (err, count) => {
+            subscriber.unsubscribe(`room_events:${roomId}`, (err) => {
                 if (err) console.error('Error unsubscribing from room channel:', err);
                 else console.log(`User ${userId} unsubscribed from room_events:${roomId}`);
             });

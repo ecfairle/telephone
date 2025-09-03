@@ -804,7 +804,6 @@ const TOTAL_GUESS_SHUFFLE = 1;
  */
 export async function pullShuffle(user_id:string) {
     try {
-        const res = [];
         const availableDrawTurnsFresh = await sql<GameShuff>`
             SELECT orig_game_id from shuffle_games where orig_game_id not in (
                 select orig_game_id from shuffle_game_users where user_id=${user_id}

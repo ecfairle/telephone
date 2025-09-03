@@ -1,6 +1,5 @@
 "use client";
 import {GameDrawing} from "@/lib/data_definitions";
-import {useRouter} from "next/navigation";
 import { Button } from '@/components/button'
 import {Loader, SendHorizonal} from 'lucide-react'
 import React, {useEffect, useState} from "react";
@@ -8,7 +7,6 @@ import { unreserveDrawing } from "@/lib/api";
 
 
 export default function Guess({gameDrawing, imageUrl, roomId} : {gameDrawing: GameDrawing, imageUrl: string, roomId?: string}) {
-    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string|null>(null);
     const calculateExpiringMinLeft = (drawingUpdatedAt:Date|string) => {

@@ -3,11 +3,10 @@ import React, { useEffect, useState } from "react";
 import GamePanels from "@/app/(game)/game_panels";
 import Canvas from "@/app/(game)/canvas/[game_drawing_id]/canvas";
 import Guess from "@/app/(game)/guess/[game_drawing_id]/guess";
-import { getShuffleGames, pullShuffle } from "@/lib/api";
+import { pullShuffle } from "@/lib/api";
 import { GameDrawing, User } from "@/lib/data_definitions";
 import { Button } from "@/components/button";
 import { Loader } from "lucide-react";
-import { unreserveDrawing } from "@/lib/api";
 
 export function useGameEvents() {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
@@ -90,12 +89,6 @@ export default function Shuffle({ userId }: { userId: string }) {
             <Button variant={'blue'} size={'lg'} disabled={pullLoading} onClick={async () => {
               // setPullLoading(true);
               await pullShuffle();
-              const res = await getShuffleGames();
-              const result: (GameDrawing & {
-                turnUser: null | string,
-                drawTurn: null | boolean,
-                signedUrl: string
-              })[] = await res.json();
               setPullLoading(false);
             }}>Play!</Button>
             <Button onClick={() => setUpdatesMode(false)} disabled={!updatesMode}>All Games</Button>

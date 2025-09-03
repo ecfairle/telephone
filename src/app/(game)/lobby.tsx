@@ -1,7 +1,7 @@
 'use client'
 import GamePanels from "@/app/(game)/game_panels";
 import ShareLink from "@/app/(game)/share_link";
-import {getRoomById, leaveRoom, startNewGame} from "@/lib/api";
+import { leaveRoom, startNewGame} from "@/lib/api";
 import React, {useEffect, useState} from "react";
 import {User} from "@/lib/data_definitions";
 import {Button} from "@/components/button";
@@ -96,7 +96,7 @@ export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gam
   };
 }
 
-export default function Lobby({roomId, userId, users, gamesMap} :{roomId: string, userId: string, users: User[], gamesMap:{ [game_id: string]: {name: string}[] }}) {
+export default function Lobby({roomId, userId} :{roomId: string, userId: string, users: User[], gamesMap:{ [game_id: string]: {name: string}[] }}) {
     const [isPlaying, setIsPlaying] = useState(null as string|null);
     const { connectionStatus, userGames, gameData, roomies} = useGameEvents(roomId, userId, setIsPlaying);    
     async function handleNewGameClick() {

@@ -5,7 +5,7 @@ import { fetchAvailableDrawings, getShuffleGames } from '@/lib/data';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getRooms } from '@/lib/data';
 import {createClient} from "redis";
-import { Game, GameDrawing } from "@/lib/data_definitions";
+import { GameDrawing } from "@/lib/data_definitions";
 
 const subscriber = await createClient({url: process.env.REDIS2_REDIS_URL!})
     .on('error', err => console.log('Redis Client Error', err))
@@ -145,6 +145,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
   });
 
   // Handle dynamic game/room changes published on the user's channel
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChannelChange = async (data: any) => {
     console.log('handleChannelChange', data);
     const connection = userConnections.get(userId);
@@ -157,7 +158,6 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
         console.log(`here: game_events:${newGameId}`)
         subscriber.subscribe(`game_events:${newGameId}`, (message: string, channel: string) => messageHandler(message, channel, connection.controller));
         connection.games.add(newGameId);
-        const gameData =  await fetchAvailableDrawings([newGameId]);
         const game = (await getShuffleGames(userId, newGameId))[0];
         connection.controller.enqueue(`data: ${JSON.stringify({
           type: 'game_joined',
@@ -172,7 +172,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
       const gameId = data.gameId;
       console.log('leave game', gameId, connection.games)
       if (gameId && connection.games.has(gameId)) {
-        subscriber.unsubscribe(`game_events:${gameId}`, (err, count) => {
+        subscriber.unsubscribe(`game_events:${gameId}`, (err) => {
              if (err) console.error('Error unsubscribing from game channel:', err);
              else console.log(`User ${userId} unsubscribed from game_events:${gameId}`);
          });
@@ -187,12 +187,11 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
 `);
       }
     } else if (data.type === 'join_room') {
-      const newRoomId = data.roomId;
     } else if (data.type === 'leave_game') {
       const gameId = data.gameId;
       console.log('leave game', gameId, connection.games)
       if (gameId && connection.games.has(gameId)) {
-        subscriber.unsubscribe(`game_events:${gameId}`, (err, count) => {
+        subscriber.unsubscribe(`game_events:${gameId}`, (err) => {
              if (err) console.error('Error unsubscribing from game channel:', err);
              else console.log(`User ${userId} unsubscribed from game_events:${gameId}`);
          });
@@ -213,7 +212,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
             console.log(`User ${userId} subscribed to room_events:${newRoomId}`);
         });
         if (connection.roomId) {
-            subscriber.unsubscribe(`room_events:${connection.roomId}`, (err, count) => {
+            subscriber.unsubscribe(`room_events:${connection.roomId}`, (err) => {
                 if (err) console.error('Error unsubscribing from old room channel:', err);
                 else console.log(`User ${userId} unsubscribed from room_events:${connection.roomId}`);
             });
@@ -231,7 +230,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
     } else if (data.type === 'leave_room') {
         const roomId = data.roomId;
         if (roomId && connection.roomId === roomId) {
-            subscriber.unsubscribe(`room_events:${roomId}`, (err, count) => {
+            subscriber.unsubscribe(`room_events:${roomId}`, (err) => {
                 if (err) console.error('Error unsubscribing from room channel:', err);
                 else console.log(`User ${userId} unsubscribed from room_events:${roomId}`);
             });
