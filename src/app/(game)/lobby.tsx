@@ -43,6 +43,9 @@ export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gam
             setUserGames(data.games);
             setGameData(data.gameData);
             setRoomies(data.roomies);
+            if (!userGames.some(game => game.turnUser === userId)) {
+                setIsPlaying(null);
+            }
             break;
           case 'game_update':
             setGameData(prev => ({ ...prev, drawings: { ...prev.drawings, [data.gameId]: data.gameData.drawings[data.gameId] }, nextPlayers: { ...prev.nextPlayers, [data.gameId]: data.gameData.nextPlayers[data.gameId] } }));
@@ -144,7 +147,7 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string,
                 <div className={'flex flex-col mt-8'}>
                     {userGames.filter(game => game.turnUser === userId && isPlaying === game.game_id).map(game => {
                                   return (
-                                    <div key={game.game_id} className={game.game_id === userGames.filter(game => game.turnUser === userId)[0].game_id ? '' : 'hidden'}>
+                                    <div key={game.game_id} className={game.game_id === userGames.filter(game => game.turnUser === userId && isPlaying === game.game_id)[0].game_id ? '' : 'hidden'}>
                                       {game.drawTurn ?
                                         <Canvas
                                           roomId={roomId}
