@@ -40,12 +40,15 @@ export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gam
         console.log('SSE event data', data)
         switch (data.type) {
           case 'connected':
-            setUserGames(data.games);
+            setUserGames(() => {
+              if (!data.games.some((game: { turnUser: string; }) => game.turnUser === userId)) {
+                setIsPlaying(null);
+              }
+              return data.games
+            });
             setGameData(data.gameData);
             setRoomies(data.roomies);
-            if (!userGames.some(game => game.turnUser === userId)) {
-                setIsPlaying(null);
-            }
+            
             break;
           case 'game_update':
             setGameData(prev => ({ ...prev, drawings: { ...prev.drawings, [data.gameId]: data.gameData.drawings[data.gameId] }, nextPlayers: { ...prev.nextPlayers, [data.gameId]: data.gameData.nextPlayers[data.gameId] } }));
