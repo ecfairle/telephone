@@ -7,7 +7,7 @@ import {useState} from "react";
 
 const MAX_ROOMS = 5;
 
-export default function RoomSelector({userRooms, roomId} : {userRooms: { room_id: string }[], roomId: string|null}) {
+export default function RoomSelector({userRooms, roomId} : {userRooms: { room_id: string }[], roomId?: string|null}) {
     async function handleNewRoomClick() {
         try {
             setNewRoomEnabled(false);
@@ -30,15 +30,17 @@ export default function RoomSelector({userRooms, roomId} : {userRooms: { room_id
     }
     return (
         <div className={"mb-2"}>
-            <div className={"mr-6 float-left"}>
+            <div className={"mr-6 float-left block"}>
         {userRooms.map((room,idx) => (
+            <div key={room.room_id} className={"w-full mt-5"}>
             <Button
-                disabled={room.room_id == roomId}
-                key={idx}
-                className={'mr-2'}
+                disabled={room.room_id === roomId}
+                
+                className={'mr-2 w-32'}
                 onClick={() => {router.push(`/room/${room.room_id}`)}}>
                     Room {idx + 1}
             </Button>
+            </div>
         ))}
             </div>
             <Button

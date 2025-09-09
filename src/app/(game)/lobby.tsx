@@ -12,12 +12,15 @@ import {GameDrawing} from "@/lib/data_definitions";
 import Canvas from "@/app/(game)/canvas/[game_drawing_id]/canvas";
 import Guess from "@/app/(game)/guess/[game_drawing_id]/guess";
 import {Loader} from "lucide-react";
+import { createPortal } from 'react-dom';
+import Link from "next/link";
+import { ArrowBigLeft } from 'lucide-react';
 
 const colors = [
     'text-blue-500', 'text-red-500', 'text-green-500', 'text-amber-500', 'text-violet-500'
 ];
 
-export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gameId: string|null) => void) {
+export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gameId: string|null) => void, setShowModal: (modalInfo: {gameId: string, drawTurn: boolean, signedUrl: string|null, guess: string|null}|null) => void) {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [roomies, setRoomies] = useState<User[]>([]);
   const [userGames, setUserGames] = useState<(GameDrawing & { turnUser: string, drawTurn: boolean, signedUrl: string })[]>([]);
@@ -56,6 +59,7 @@ export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gam
               if (game.game_id == data.gameId) {
                 if (game.turnUser === userId && !(data.game.turnUser === userId)) {
                     setIsPlaying(null);
+                    setShowModal({gameId: data.gameId, drawTurn: game.drawTurn, signedUrl: data.game.signedUrl, guess: data.game.target_word});
                 }
                 return { ...game, ...data.game };
               }
@@ -104,7 +108,8 @@ export function useGameEvents(roomId: string, userId: string, setIsPlaying: (gam
 
 export default function Lobby({roomId, userId} :{roomId: string, userId: string, users: User[], gamesMap:{ [game_id: string]: {name: string}[] }}) {
     const [isPlaying, setIsPlaying] = useState(null as string|null);
-    const { connectionStatus, userGames, gameData, roomies} = useGameEvents(roomId, userId, setIsPlaying);    
+    const [showModal, setShowModal] = useState(null as {gameId: string, drawTurn: boolean, signedUrl: string|null, guess: string|null}|null);
+    const { connectionStatus, userGames, gameData, roomies} = useGameEvents(roomId, userId, setIsPlaying, setShowModal);    
     async function handleNewGameClick() {
         await startNewGame(roomId);
         router.refresh();
@@ -123,11 +128,23 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string,
       <Loader className={'text-blue-500 animate-spin m-auto'} size={100} /></div>
     }
     const userColors = roomies.reduce((prev, cur, idx) => ({[cur.name]: colors[idx],  ...prev}), {});
-    return (<div className={"flex flex-col container"}>
-            <div className={''}>
-                 <Button className={'text-white bg-red-500 mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>
-                {Object.keys(userGames).length === 0 && <Button disabled={!(userGames.length === 0 && roomies.length > 1)} onClick={handleNewGameClick}>Start Game</Button>}
-            </div>
+    return (
+    <>
+    <div className={"flex justify-start"}>
+      <Link href={"/"} className={"mr-5"}> {"Room List"} <ArrowBigLeft/></Link>
+      <Button className={'text-white bg-red-500 mr-5'} onClick={handleLeaveRoomClick}>Leave Room</Button>
+    </div>
+    {showModal !== null && createPortal(
+              <div className="modal">
+              <div className={"wrap text-center"}>
+                <div>{showModal.drawTurn ? "you drew:" : "you guessed:"}</div> <br/> {showModal.guess ? showModal.guess : showModal.signedUrl !== null ? <img className={'inline-block h-250'} alt={"drawing"} src={showModal.signedUrl}/> : "no drawing available"}
+                <br></br>
+                <Button variant={"blue"} onClick={() => setShowModal(null)}>Close</Button>
+              </div>
+              
+    </div>, document.body)}      
+    <div className={"flex flex-col container"}>
+              {Object.keys(userGames).length === 0 && <Button disabled={!(userGames.length === 0 && roomies.length > 1)} onClick={handleNewGameClick}>Start Game</Button>}
             {Object.keys(userGames).length === 0 ?
                 <div>
                     <div className={""}>
@@ -161,7 +178,11 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string,
                                     </div>
                                   );
                                 })}
-                              {!isPlaying &&userGames.map((game, idx) => (
+                              {!isPlaying && userGames.filter(game => game.turnUser === userId).map((game, idx) => (
+                                <div key={game.game_id} className={"margin-auto text-center"}>
+                                  <Button size={"xl"} className={(idx === 0 ? '' : 'hidden')} variant={"blue"} onClick={() => setIsPlaying && setIsPlaying(game.game_id)}>{"Play"}</Button>
+                                </div>))}
+                              {!isPlaying && userGames.filter(game => game.turnUser === userId).length === 0 && userGames.map((game, idx) => (
                                 <div key={idx}>
                                   <GamePanels roomId={roomId} userColors={{}} userId={userId} gameId={game.game_id} drawings={gameData.drawings[game.game_id].drawings} nextPlayerUser={gameData.nextPlayers[game.game_id]} setIsPlaying={setIsPlaying} />
                                 </div>
@@ -169,6 +190,7 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string,
                 </div>
             }
         </div>
+        </>
     )
 }
 
