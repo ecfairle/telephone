@@ -8,7 +8,7 @@ import {
 } from 'react-sketch-canvas'
 
 import { Button } from '@/components/button'
-import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, SendHorizonal, Loader} from 'lucide-react'
+import {Eraser, Pen, Redo, RotateCcw, Undo, Circle, Loader} from 'lucide-react'
 import Github from '@uiw/react-color-github';
 import { uploadImage } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -121,7 +121,7 @@ export default function Canvas({secretWord, drawing, roomId} : {secretWord:strin
         <section className='py-10 p-5'>
             <canvas id="myCanvas" ref={tempCanvasRef} width="500" height="500" className={'hidden'}></canvas>
             <div className='container mx-auto max-w-fit justify-center text-center'>
-                {!roomId && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`} min left`}</div>}
+                {!roomId && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`}m left`} &nbsp; {!submitted && <Button size={"sm"} onClick={() => { unreserveDrawing(drawing.game_id); }}>Skip</Button>}</div>}
                 <div className='text-3xl justify-center text-center'>{"draw: " + word}</div>
                 <div className='mt-6 flex max-w-2xl gap-4'>
                     <ReactSketchCanvas
@@ -273,7 +273,6 @@ export default function Canvas({secretWord, drawing, roomId} : {secretWord:strin
                 {error && <div className='text-red-500'>{error}</div>}
                 <Button
                     className='m-4'
-                    size='xl'
                     type='button'
                     variant='blue'
                     onClick={() => {
@@ -283,9 +282,8 @@ export default function Canvas({secretWord, drawing, roomId} : {secretWord:strin
                     }}
                     disabled={submitted}
                 >
-                    {submitted? <Loader className={'animate-spin'} size={25}/>:<SendHorizonal size={25}/>}
+                    {submitted? <Loader className={'animate-spin'} size={25}/>: "Submit"}
                 </Button>
-                {!submitted && <div><Button size={"sm"} onClick={() => { unreserveDrawing(drawing.game_id); }}>Skip</Button></div>}
             </div>
         </section>
     )
