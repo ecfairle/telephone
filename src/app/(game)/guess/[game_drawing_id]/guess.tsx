@@ -54,18 +54,15 @@ export default function Guess({gameDrawing, imageUrl, roomId} : {gameDrawing: Ga
             <div className='container mx-auto max-w-fit box-sizing'>
                {!roomId && <div className='text-center justify-center'>{`${expiryMinLeft > 0 ? expiryMinLeft : `<1`}m left`} &nbsp; {!loading && <Button size={"sm"} onClick={() => { unreserveDrawing(gameDrawing.game_id); }}>Skip</Button>}</div>}
                 {error && <div className='text-red-500 text-center'>{error}</div>}
-                <form method="post" onSubmit={handleSubmit} className='text-3xl justify-center text-center'>
-                    <label>Guess: <input className={'rounded-xl border-black border w-80 pl-2'} name="guess" autoComplete="off" maxLength={17}/></label>
-                    <Button
-                        size='xl'
+                <img alt='drawing' src={`${imageUrl}`} className='border border-black mt-2 mb-2'/>
+                <form method="post" onSubmit={handleSubmit} className='flex justify-start text-xl justify-center text-center gap-2'>
+                    <label>Guess:</label> <textarea cols={40} rows={2} className={'rounded-xl border-black border w-40 pl-2'} name="guess" autoComplete="off" maxLength={30}/> <Button
                         type='submit'
                         variant={'blue'}
-                        className={'m-5'}
                         disabled={loading}>
-                        {loading? <Loader className={'animate-spin'} size={25}/> :<SendHorizonal size={25}/>}
+                        {loading? <Loader className={'animate-spin'} size={25}/> : "Submit"}
                     </Button>
                 </form>
-                <img alt='drawing' src={`${imageUrl}`} className='border border-black'/>
             </div>
         )
 }
