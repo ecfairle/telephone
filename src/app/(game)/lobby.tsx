@@ -144,22 +144,25 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string,
               
     </div>, document.body)}      
     <div className={"flex flex-col container"}>
-              {Object.keys(userGames).length === 0 && <Button disabled={!(userGames.length === 0 && roomies.length > 1)} onClick={handleNewGameClick}>Start Game</Button>}
+          
+              {Object.keys(userGames).length === 0 && 
+              <div className={"mt-5 w-120"}>
+                <Button variant={'blue'} disabled={!(userGames.length === 0 && roomies.length > 1)} onClick={handleNewGameClick}>Start Game</Button>
+                <ShareLink roomId={roomId} showTooltip={true}></ShareLink>
+              </div>
+              }
+
             {Object.keys(userGames).length === 0 ?
                 <div>
                     <div className={""}>
                         {roomies.map((user) => {
                             return (
-                                <div key={user.id} className='w-24 h-18 mt-10 truncate'><UserTag userColors={userColors}
+                                <div key={user.id} className='w-24 h-18 mt-5 truncate'><UserTag userColors={userColors}
                                                                                                  name={user.name}/>
                                     <img className={'w-12 h-12'} src={user.image}/>
                                 </div>)
                         })
                         }
-                        {Array.from({length: 5 - roomies.length}, (v, k) => k + 1).map((idx) => (
-                            <div key={idx}><ShareLink roomId={roomId} showTooltip={idx === 1}></ShareLink>
-                            </div>
-                        ))}
                     </div>
                     <GameBlurb/>
                 </div>
