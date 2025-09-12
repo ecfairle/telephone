@@ -77,6 +77,7 @@ export default function Shuffle({ userId }: { userId: string }) {
   const [pullLoading, setPullLoading] = useState<boolean>(false);
   const { connectionStatus, userGames, gameData } = useGameEvents();
 
+  console.log('userGames', userGames);
   if (connectionStatus === 'disconnected') {
       return <div className='container mx-auto max-w-fit justify-center text-center flex h-screen'>
     <Loader className={'text-blue-500 animate-spin m-auto'} size={100} /></div>
@@ -97,7 +98,7 @@ export default function Shuffle({ userId }: { userId: string }) {
           <div>
             {userGames.filter(game => game.turnUser === userId).map(game => {
               return (
-                <div key={game.game_id} className={game.game_id === userGames.filter(game => game.turnUser === userId)[0].game_id ? '' : 'hidden'}>
+                <div key={game.game_id} className={game.game_id === userGames.filter(game => game.turnUser === userId).sort((game) => new Date(game.created_at).getDate())[0].game_id ? '' : 'hidden'}>
                   {game.drawTurn ?
                     <Canvas
                       drawing={game}
