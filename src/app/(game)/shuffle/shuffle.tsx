@@ -86,12 +86,12 @@ export default function Shuffle({ userId }: { userId: string }) {
       <>
         {<>
           {!userPlaying &&
-            <div className={"space-x-3"}>
-              <Button variant={'blue'} size={'lg'} disabled={pullLoading} onClick={async () => {
-                // setPullLoading(true);
+            <div className={"space-x-3 justify-center text-center flex"}>
+              <Button variant={'blue'} size={'xl'} className="w-40" disabled={pullLoading} onClick={async () => {
+                setPullLoading(true);
                 await pullShuffle();
                 setPullLoading(false);
-              }}>Play!</Button>
+              }}>Find Games</Button>
               {/* <Button onClick={() => setUpdatesMode(false)} disabled={!updatesMode}>All Games</Button>
               <Button onClick={() => setUpdatesMode(true)} disabled={updatesMode}>Updates</Button> */}
             </div>
@@ -110,11 +110,15 @@ export default function Shuffle({ userId }: { userId: string }) {
               );
             }) 
             :
-            userGames.filter(game => game.turnUser !== userId).map((game, idx) => (
+            <div className="mt-5">
+            Past Games:
+            {userGames.filter(game => game.turnUser !== userId).map((game, idx) => (
             <div key={idx}>
               <GamePanels userColors={{}} userId={userId} gameId={game.game_id} drawings={gameData.drawings[game.game_id].drawings} nextPlayerUser={gameData.nextPlayers[game.game_id]} />
             </div>
           ))}
+          </div>
+          }
         </>
         }
       </>
