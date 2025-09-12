@@ -1,7 +1,7 @@
 "use client";
 import {GameDrawing} from "@/lib/data_definitions";
 import { Button } from '@/components/button'
-import {Loader, SendHorizonal} from 'lucide-react'
+import {Loader} from 'lucide-react'
 import React, {useEffect, useState} from "react";
 import { unreserveDrawing } from "@/lib/api";
 
