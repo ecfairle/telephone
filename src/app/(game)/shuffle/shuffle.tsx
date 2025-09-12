@@ -73,30 +73,31 @@ export function useGameEvents() {
 }
 
 export default function Shuffle({ userId }: { userId: string }) {
-  const [updatesMode, setUpdatesMode] = useState<boolean>(false);
+  // const [updatesMode, setUpdatesMode] = useState<boolean>(false);
   const [pullLoading, setPullLoading] = useState<boolean>(false);
   const { connectionStatus, userGames, gameData } = useGameEvents();
-
-  console.log('userGames', userGames);
   if (connectionStatus === 'disconnected') {
       return <div className='container mx-auto max-w-fit justify-center text-center flex h-screen'>
     <Loader className={'text-blue-500 animate-spin m-auto'} size={100} /></div>
   }
 
+  const userPlaying = userGames.some(game => game.turnUser === userId);
   return (
-      <div>
-        {<div>
-          <div className={"space-x-3"}>
-            <Button variant={'blue'} size={'lg'} disabled={pullLoading} onClick={async () => {
-              // setPullLoading(true);
-              await pullShuffle();
-              setPullLoading(false);
-            }}>Play!</Button>
-            <Button onClick={() => setUpdatesMode(false)} disabled={!updatesMode}>All Games</Button>
-            <Button onClick={() => setUpdatesMode(true)} disabled={updatesMode}>Updates</Button>
-          </div>
-          <div>
-            {userGames.filter(game => game.turnUser === userId).map(game => {
+      <>
+        {<>
+          {!userPlaying &&
+            <div className={"space-x-3"}>
+              <Button variant={'blue'} size={'lg'} disabled={pullLoading} onClick={async () => {
+                // setPullLoading(true);
+                await pullShuffle();
+                setPullLoading(false);
+              }}>Play!</Button>
+              {/* <Button onClick={() => setUpdatesMode(false)} disabled={!updatesMode}>All Games</Button>
+              <Button onClick={() => setUpdatesMode(true)} disabled={updatesMode}>Updates</Button> */}
+            </div>
+          }
+            {userPlaying ? 
+            userGames.filter(game => game.turnUser === userId).map(game => {
               return (
                 <div key={game.game_id} className={game.game_id === userGames.filter(game => game.turnUser === userId).sort((game) => new Date(game.created_at).getDate())[0].game_id ? '' : 'hidden'}>
                   {game.drawTurn ?
@@ -107,15 +108,15 @@ export default function Shuffle({ userId }: { userId: string }) {
                     <Guess gameDrawing={game} imageUrl={game.signedUrl} />}
                 </div>
               );
-            })}
-          </div>
-          {!userGames.some(game => game.turnUser === userId) && userGames.filter(game => game.turnUser !== userId).map((game, idx) => (
+            }) 
+            :
+            userGames.filter(game => game.turnUser !== userId).map((game, idx) => (
             <div key={idx}>
               <GamePanels userColors={{}} userId={userId} gameId={game.game_id} drawings={gameData.drawings[game.game_id].drawings} nextPlayerUser={gameData.nextPlayers[game.game_id]} />
             </div>
           ))}
-        </div>
+        </>
         }
-      </div>
+      </>
   )
 }
