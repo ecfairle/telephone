@@ -31,6 +31,9 @@ export default function RoomSelector({userRooms, roomId} : {userRooms: { room_id
     return (
         <div className={"mb-2"}>
             <div className={"mr-6 float-left block"}>
+                <Button
+                disabled={!newRoomEnabled}
+                onClick={handleNewRoomClick}>New Room</Button>
         {userRooms.map((room,idx) => (
             <div key={room.room_id} className={"w-full mt-5"}>
             <Button
@@ -43,9 +46,6 @@ export default function RoomSelector({userRooms, roomId} : {userRooms: { room_id
             </div>
         ))}
             </div>
-            <Button
-                disabled={!newRoomEnabled}
-                onClick={handleNewRoomClick}>New Room</Button>
         </div>
     )
 }

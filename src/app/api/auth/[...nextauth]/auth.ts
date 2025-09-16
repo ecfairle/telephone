@@ -4,6 +4,8 @@ import PostgresAdapter from "@auth/pg-adapter";
 import DiscordProvider from "next-auth/providers/discord";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import fs from 'fs/promises';
+import path from 'path';
 
 const pool = createPool();
 export const authOptions: NextAuthOptions = {
@@ -34,12 +36,30 @@ export const authOptions: NextAuthOptions = {
                 if (!pg?.createUser) {
                     throw new Error('Postgres Adapter not configured correctly');
                 }
+                
+                // Read adjectives and nouns from files
+                const adjectiveFilePath = path.join(process.cwd(), 'src', 'data', 'name_adj.txt');
+                const nounFilePath = path.join(process.cwd(), 'src', 'data', 'name_noun.txt');
+                
+                const adjectiveList = (await fs.readFile(adjectiveFilePath, 'utf-8')).split('\n').map(line => line.trim()).filter(line => line != '');
+                const nounList = (await fs.readFile(nounFilePath, 'utf-8')).split('\n').map(line => line.trim()).filter(line => line !== '');
+                
+                const noun = nounList[Math.floor(Math.random() * nounList.length)];
+                const adjective = adjectiveList[Math.floor(Math.random() * adjectiveList.length)];
+                const username = `${adjective[0].toUpperCase() + adjective.slice(1)}${noun[0].toUpperCase() + noun.slice(1)}`;
+                
+                // Get list of animal avatars
+                const avatarDir = path.join(process.cwd(), 'public', 'animal_avatars');
+                const avatarFiles = await fs.readdir(avatarDir);
+                const randomAvatar = avatarFiles[Math.floor(Math.random() * avatarFiles.length)];
+                const avatarPath = `/animal_avatars/${randomAvatar}`;
+                
                 const user = pg.createUser({ 
                     id: 'anonymous',
-                    name: 'anonymous',
+                    name: username,
                     email: 'guest@example.com',
                     emailVerified: null,
-                    image: null
+                    image: avatarPath
                 })
 
                 return user
