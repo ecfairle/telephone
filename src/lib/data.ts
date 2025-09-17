@@ -120,20 +120,12 @@ export async function setDrawingDone(game_drawing_id:string, user_id:string) {
         await redis.del(`game_drawings_expiry_${drawing.game_id}`);
         await redis.del(`shuffle_games_${drawing.drawer_id}`);
 
-        if (nextPlayer === null) {
-            // no more players
-            await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
-            // Publish SSE event via Redis
-            // const updatedGameData = await fetchAvailableDrawings([drawing.game_id]);
-            await redis.publish(
-                `game_events:${drawing.game_id}`,
-                JSON.stringify({ type: 'drawing_done', gameId: drawing.game_id, drawingId: drawing.id })
-            );
-            return null;
+        if(nextPlayer !== null) {
+            // set up next user in game for room if possible
+            await sql<GameDrawing>`
+            INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
+            VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id}) RETURNING *`
         }
-        await sql<GameDrawing>`
-        INSERT INTO game_drawings (id, game_id, prev_game_drawing_id, drawing_done, guesser_id)
-        VALUES (${v4()}, ${drawing.game_id}, ${drawing.id}, false, ${nextPlayer.id}) RETURNING *`
         await redis.del('game_drawings_' + drawing.game_id + dateAtPST());
         await redis.publish(
             `game_events:${drawing.game_id}`,
