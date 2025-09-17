@@ -157,7 +157,7 @@ export default function Lobby({roomId, userId} :{roomId: string, userId: string,
                     <div className={""}>
                         {roomies.map((user) => {
                             return (
-                                <div key={user.id} className='w-24 h-18 mt-5 truncate'><UserTag userColors={userColors}
+                                <div key={user.id} className='w-48 h-18 mt-5 truncate'><UserTag userColors={userColors}
                                                                                                  name={user.name}/>
                                     <img className={'w-12 h-12'} src={user.image}/>
                                 </div>)
