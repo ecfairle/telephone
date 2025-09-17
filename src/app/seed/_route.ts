@@ -307,6 +307,13 @@ async function seedGames() {
     );
   `;
 
+  await client.sql`
+  CREATE TABLE IF NOT EXISTS room_game (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    room_id UUID NOT NULL REFERENCES rooms,
+    play_date DATE not null,
+    UNIQUE(room_id, play_date))`
+
 //     CREATE TABLE shuffle_game_users (
 //         orig_game_id UUID NOT NULL references games,
 //         user_id UUID NOT NULL references users,

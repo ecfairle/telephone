@@ -430,6 +430,7 @@ export async function startNewGameForRoom(room_id:string) {
 
 
         let i = 0;
+        await sql`INSERT INTO room_games (room_id, play_date) VALUES (${room_id}, ${todayDateString})`
         while (i < users.length) {
             const word = wordRows.rows[i].word;
             const gameUsers = users.slice(i, users.length).concat(users.slice(0, i));
