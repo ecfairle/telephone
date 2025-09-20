@@ -326,7 +326,7 @@ export async function readWordList() {
 
 export async function getRoomies(room_id:string) {
     try {
-        const users = await sql`
+        const users = await sql<User>`
 SELECT users.* FROM users JOIN user_rooms on user_rooms.room_id=${room_id} and user_rooms.user_id=users.id`;
         return users.rows;
     } catch (error) {
