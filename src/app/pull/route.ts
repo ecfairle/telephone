@@ -9,8 +9,8 @@ export async function POST() {
     }
     const userId = session.user.userId;
     try {
-        await pullShuffle(userId);
-        return Response.json('!');
+        const gameIds = await pullShuffle(userId);
+        return Response.json(gameIds);
     } catch (error) {
         return Response.json({ error }, { status: 500 });
     }

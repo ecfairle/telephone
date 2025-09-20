@@ -7,6 +7,7 @@ import { pullShuffle } from "@/lib/api";
 import { GameDrawing, User } from "@/lib/data_definitions";
 import { Button } from "@/components/button";
 import { Loader } from "lucide-react";
+import { createPortal } from "react-dom";
 
 export function useGameEvents() {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
@@ -75,8 +76,9 @@ export function useGameEvents() {
 export default function Shuffle({ userId }: { userId: string }) {
   // const [updatesMode, setUpdatesMode] = useState<boolean>(false);
   const [pullLoading, setPullLoading] = useState<boolean>(false);
+  const [showNoGamesModal, setShowNoGamesModal] = useState<boolean>(false);
   const { connectionStatus, userGames, gameData } = useGameEvents();
-  if (connectionStatus === 'disconnected') {
+  if (connectionStatus === 'disconnected' || pullLoading) {
       return <div className='container mx-auto max-w-fit justify-center text-center flex h-screen'>
     <Loader className={'text-blue-500 animate-spin m-auto'} size={100} /></div>
   }
@@ -89,8 +91,13 @@ export default function Shuffle({ userId }: { userId: string }) {
             <div className={"space-x-3 justify-center text-center flex"}>
               <Button variant={'blue'} size={'xl'} className="w-40" disabled={pullLoading} onClick={async () => {
                 setPullLoading(true);
-                await pullShuffle();
+                const result = await pullShuffle();
                 setPullLoading(false);
+                
+                // Check if the result contains any games
+                if (!result || (Array.isArray(result) && result.length === 0)) {
+                  setShowNoGamesModal(true);
+                }
               }}>Find Games</Button>
               {/* <Button onClick={() => setUpdatesMode(false)} disabled={!updatesMode}>All Games</Button>
               <Button onClick={() => setUpdatesMode(true)} disabled={updatesMode}>Updates</Button> */}
@@ -121,6 +128,16 @@ export default function Shuffle({ userId }: { userId: string }) {
           }
         </>
         }
+        
+      {/* Modal for no games found */}
+      {showNoGamesModal && createPortal(
+        <div className="modal">
+          <div className={"wrap text-center"}>
+            <h3 className="text-lg font-medium mb-4">No Games Found</h3>
+            <Button variant={'blue'} onClick={() => setShowNoGamesModal(false)}>Close</Button>
+          </div></div>,
+        document.body
+        )}
       </>
   )
 }
