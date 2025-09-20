@@ -326,14 +326,8 @@ export async function readWordList() {
 
 export async function getRoomies(room_id:string) {
     try {
-        const cachedUsers = await redis.get('roomies_' + room_id);
-        if (cachedUsers !== null) {
-            return JSON.parse(cachedUsers);
-        }
-        console.log('cache miss for room: '+ room_id);
         const users = await sql`
 SELECT users.* FROM users JOIN user_rooms on user_rooms.room_id=${room_id} and user_rooms.user_id=users.id`;
-        await redis.set('roomies_' + room_id, JSON.stringify(users.rows));
         return users.rows;
     } catch (error) {
         console.error('Database Error:', error);
@@ -345,7 +339,6 @@ export async function joinRoom(user_id:string, room_id:string) {
     try {
         const res = await sql`UPDATE users SET room_id = ${room_id} where id=${user_id} RETURNING *`;
         await sql`INSERT INTO user_rooms (user_id,room_id) VALUES (${user_id},${room_id})`
-        await redis.del('roomies_' + room_id);
         await redis.publish(
             `room_events:${room_id}`,
             JSON.stringify({ type: 'join_room', userId: user_id, user: res.rows[0]})
@@ -366,7 +359,6 @@ export async function leaveRoom(user_id:string, room_id:string) {
         const res = await sql`UPDATE users SET room_id = null where id=${user_id} RETURNING *`;
         await sql`DELETE from user_rooms where user_id=${user_id} and room_id=${room_id}`;
         const user = res.rows.length > 0 ? res.rows[0] : null;
-        await redis.del('roomies_' + room_id);
         await redis.publish(
             `room_events:${room_id}`,
             JSON.stringify({ type: 'leave_room', userId: user_id})

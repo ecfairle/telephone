@@ -8,13 +8,32 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const pool = createPool();
+
+// Helper function to get a random animal avatar
+async function getRandomAvatar() {
+    // Get list of animal avatars
+    const avatarDir = path.join(process.cwd(), 'public', 'animal_avatars');
+    const avatarFiles = await fs.readdir(avatarDir);
+    const randomAvatar = avatarFiles[Math.floor(Math.random() * avatarFiles.length)];
+    return `/animal_avatars/${randomAvatar}`;
+}
+
 export const authOptions: NextAuthOptions = {
     secret: process.env.NEXT_AUTH_SECRET as string,
     adapter: PostgresAdapter(pool),
     providers: [
         DiscordProvider({
             clientId: process.env.DISCORD_ID as string,
-            clientSecret: process.env.DISCORD_SECRET as string
+            clientSecret: process.env.DISCORD_SECRET as string,
+            profile: async (profile) => {
+                const avatarPath = await getRandomAvatar();
+                return {
+                    id: profile.id,
+                    name: profile.name,
+                    email: profile.email,
+                    image: avatarPath
+                }
+            }
         }),
         GoogleProvider({
             clientId: process.env.GOOGLE_ID as string,
@@ -24,6 +43,15 @@ export const authOptions: NextAuthOptions = {
                     prompt: "consent",
                     access_type: "offline",
                     response_type: "code"
+                }
+            },
+            profile: async (profile) => {
+                const avatarPath = await getRandomAvatar();
+                return {
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email,
+                    image: avatarPath
                 }
             }
         }),
@@ -48,11 +76,8 @@ export const authOptions: NextAuthOptions = {
                 const adjective = adjectiveList[Math.floor(Math.random() * adjectiveList.length)];
                 const username = `${adjective[0].toUpperCase() + adjective.slice(1)}${noun[0].toUpperCase() + noun.slice(1)}`;
                 
-                // Get list of animal avatars
-                const avatarDir = path.join(process.cwd(), 'public', 'animal_avatars');
-                const avatarFiles = await fs.readdir(avatarDir);
-                const randomAvatar = avatarFiles[Math.floor(Math.random() * avatarFiles.length)];
-                const avatarPath = `/animal_avatars/${randomAvatar}`;
+                // Get random avatar (keeping this logic for anonymous login)
+                const avatarPath = await getRandomAvatar();
                 
                 const user = pg.createUser({ 
                     id: 'anonymous',
