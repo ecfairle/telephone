@@ -619,9 +619,6 @@ export async function getAllShuffleGamesDB() {
     const data = await sql<GameShuff>`select *, ((updated_at + INTERVAL '30 seconds') < (current_timestamp)) as reserve_expired  from shuffle_games`;
     return data.rows;
 }
-export async function getAllShuffleGames() {
-    return await redis.sMembers('shuffle_games_reserved');
-}
 
 export async function unreserveDrawing(gameId:string) {
     try {
@@ -683,7 +680,7 @@ export async function unreserveGuess(gameId:string) {
  */
 export async function checkExpiredShuffleDrawings(gameIds?:string[]) {
     try {
-        const shuffleGames = gameIds? gameIds : await getAllShuffleGames();
+        const shuffleGames = gameIds? gameIds : await redis.sMembers('shuffle_games_reserved');
         const expiredGameIds = [];
         for (const shuffleGameId of shuffleGames) {
             const value = await redis.get('game_drawings_expiry_' + shuffleGameId);
@@ -968,6 +965,30 @@ export async function getShuffleGames(user_id:string, game_id:string|null=null, 
         }
         return gamesDataWithSignedUrl.filter(
             (game:GameDrawing) => !expiredGameIds.includes(game.game_id));
+    } catch(error) {
+        console.log(error);
+        throw new Error('Failed to get shuffle games');
+    }
+}
+
+export async function getAllShuffleGames(user_id:string, offset=0, limit=10) {
+    try {
+        let data = null;
+        data = await sql`SELECT * FROM shuffle_games order by created_at desc,id desc limit ${limit} offset ${offset}`;
+        const gameIds = data.rows.map(row => row.id);
+        console.log('shuffle games for user: ', user_id, gameIds);
+        const lastRecords = await Promise.all(gameIds.map(async gameId=> await getLastGameRecord(gameId)));
+        const gamesData = lastRecords.filter(record => record !== undefined).map(record => ({
+            ...record,
+            drawTurn: record.drawer_id && !record.drawing_done,
+            turnUser: (record.drawer_id && !record.drawing_done)? record.drawer_id: record.target_word === null ? record.guesser_id : null,
+        }));
+        const gamesDataWithSignedUrl = await Promise.all(gamesData.map(async game => ({
+            ...game,
+            signedUrl: await getSignedUrl(game.prev_game_drawing_id)
+        })))
+        console.log('leng' , gamesDataWithSignedUrl.length)
+        return gamesDataWithSignedUrl;
     } catch(error) {
         console.log(error);
         throw new Error('Failed to get shuffle games');

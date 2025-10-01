@@ -152,6 +152,12 @@ export async function getShuffleGames() {
     })
 }
 
+export async function getAllShuffleGames(offset:number, limit:number) {
+    return await fetch(`/all_shuffle_games?limit=${limit}&offset=${offset}`, {
+        method: 'GET'
+    })
+}
+
 export async function unreserveDrawing(shuffleGameId:string) {
     return await fetch(`/leave_game`, {
         method: 'POST',

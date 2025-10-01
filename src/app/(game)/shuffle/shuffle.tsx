@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import GamePanels from "@/app/(game)/game_panels";
 import Canvas from "@/app/(game)/canvas/[game_drawing_id]/canvas";
 import Guess from "@/app/(game)/guess/[game_drawing_id]/guess";
-import { pullShuffle } from "@/lib/api";
+import { getAllShuffleGames, pullShuffle } from "@/lib/api";
 import { GameDrawing, User } from "@/lib/data_definitions";
 import { Button } from "@/components/button";
 import { Loader } from "lucide-react";
@@ -77,13 +77,29 @@ export default function Shuffle({ userId }: { userId: string }) {
   // const [updatesMode, setUpdatesMode] = useState<boolean>(false);
   const [pullLoading, setPullLoading] = useState<boolean>(false);
   const [showNoGamesModal, setShowNoGamesModal] = useState<boolean>(false);
+  const [offset, setOffset] = useState<number>(0);
+  const limit = 10;
+  const [allGameData, setAllGameData] = useState<(GameDrawing&{shuffle_available:boolean})[][]>([]);
   const { connectionStatus, userGames, gameData } = useGameEvents();
+
+  useEffect(() => {
+    const loadGamesData = async() => {
+      const res = await getAllShuffleGames(0, limit);
+      const newGameData:{
+    drawings: { [game_id: string]: {drawings: (GameDrawing&{shuffle_available:boolean})[]} };
+    nextPlayers: { [game_id: string]: User|null }} = await res.json()
+      setAllGameData(Object.values(newGameData.drawings).map(drawings => drawings.drawings));
+    }
+    if (allGameData.length === 0) {loadGamesData()}
+  }, [allGameData.length]);
+
   if (connectionStatus === 'disconnected' || pullLoading) {
       return <div className='container mx-auto max-w-fit justify-center text-center flex h-screen'>
     <Loader className={'text-blue-500 animate-spin m-auto'} size={100} /></div>
   }
 
   const userPlaying = userGames.some(game => game.turnUser === userId);
+  console.log(allGameData)
   return (
       <>
         {<>
@@ -119,16 +135,31 @@ export default function Shuffle({ userId }: { userId: string }) {
             :
             <div className="mt-5">
             Past Games:
+            <div className="flex flex-wrap gap-4">
             {userGames.filter(game => game.turnUser !== userId).map((game, idx) => (
-            <div key={idx}>
+            <div key={idx} className="flex-shrink-0 border border-gray-200 rounded-md p-">
               <GamePanels userColors={{}} userId={userId} gameId={game.game_id} drawings={gameData.drawings[game.game_id].drawings} nextPlayerUser={gameData.nextPlayers[game.game_id]} />
             </div>
           ))}
+          {allGameData && allGameData.map((drawings) => (
+              <div key={drawings[0].game_id} className={'border border-gray-200 rounded-md p-'}>
+                <GamePanels userColors={{}} userId={userId} gameId={drawings[0].game_id} drawings={drawings} nextPlayerUser={null} isFullGame={true}/>
+              </div>
+          ))}
+          <Button onClick={async() => {
+          const newOffset = offset + 10;
+          setOffset(newOffset)
+      const res = await getAllShuffleGames(newOffset, limit);
+      const newGameData:{
+    drawings: { [game_id: string]: {drawings: (GameDrawing&{shuffle_available:boolean})[]} };
+    nextPlayers: { [game_id: string]: User|null }} = await res.json()
+      setAllGameData((allGameData) => {return [...allGameData, ...Object.values(newGameData.drawings).map(drawings => drawings.drawings)]});
+    }}>Load More..</Button>
+          </div>
           </div>
           }
         </>
         }
-        
       {/* Modal for no games found */}
       {showNoGamesModal && createPortal(
         <div className="modal">

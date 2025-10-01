@@ -28,7 +28,6 @@ export async function GET() {
   // Channels to subscribe to initially
   const gameChannels = userGames.map((game: GameDrawing) => `game_events:${game.game_id}`);
   const gameData = await fetchAvailableDrawings(userGames.map((game:GameDrawing)=>game.game_id), false)
-  console.log('gameData', gameData)
   const roomChannel = roomId ? [`room_events:${roomId}`] : [];
   const userChannel = `user_events:${userId}`;
   const allChannelsToSubscribe = [...gameChannels, ...roomChannel, userChannel];
