@@ -76,6 +76,7 @@ export function useGameEvents() {
 export default function Shuffle({ userId }: { userId: string }) {
   // const [updatesMode, setUpdatesMode] = useState<boolean>(false);
   const [pullLoading, setPullLoading] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [showNoGamesModal, setShowNoGamesModal] = useState<boolean>(false);
   const [offset, setOffset] = useState<number>(0);
   const limit = 10;
@@ -135,18 +136,19 @@ export default function Shuffle({ userId }: { userId: string }) {
             :
             <div className="mt-5">
             Past Games:
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
             {userGames.filter(game => game.turnUser !== userId).map((game, idx) => (
             <div key={idx} className="flex-shrink-0 border border-gray-200 rounded-md p-">
               <GamePanels userColors={{}} userId={userId} gameId={game.game_id} drawings={gameData.drawings[game.game_id].drawings} nextPlayerUser={gameData.nextPlayers[game.game_id]} />
             </div>
           ))}
           {allGameData && allGameData.map((drawings) => (
-              <div key={drawings[0].game_id} className={'border border-gray-200 rounded-md p-'}>
+              <div key={drawings[0].game_id} className={'flex-shrink-0 border border-gray-200 rounded-md p-'}>
                 <GamePanels userColors={{}} userId={userId} gameId={drawings[0].game_id} drawings={drawings} nextPlayerUser={null} isFullGame={true}/>
               </div>
           ))}
-          <Button onClick={async() => {
+          {loadingMore? <Loader className={'text-blue-500 animate-spin m-auto'} size={30} /> : <Button variant={'blue'} onClick={async() => {
+            setLoadingMore(true);
           const newOffset = offset + 10;
           setOffset(newOffset)
       const res = await getAllShuffleGames(newOffset, limit);
@@ -154,7 +156,8 @@ export default function Shuffle({ userId }: { userId: string }) {
     drawings: { [game_id: string]: {drawings: (GameDrawing&{shuffle_available:boolean})[]} };
     nextPlayers: { [game_id: string]: User|null }} = await res.json()
       setAllGameData((allGameData) => {return [...allGameData, ...Object.values(newGameData.drawings).map(drawings => drawings.drawings)]});
-    }}>Load More..</Button>
+      setLoadingMore(false);
+    }}>Load More..</Button>}
           </div>
           </div>
           }

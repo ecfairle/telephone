@@ -8,7 +8,7 @@ import React from "react";
 export default async function Layout({ children } : {children: React.ReactNode}) {
     const data = await getServerSession(authOptions);
   return (
-      <div className={"p-5"}>
+      <div className={"p-2"}>
       <SessionProvider session={data}><Header/>
       <main>{children}</main>
       </SessionProvider>

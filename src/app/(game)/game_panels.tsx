@@ -134,24 +134,38 @@ function GameOverview({userColors, firstDrawing, alreadyFinished, turns, userId}
         cols = 4;
     }
     
-    const gridClasses = `grid grid-cols-${cols} grid-rows-${rows} gap-4`;
+    const colClassMap:{[key: number]: string} = {
+        2: 'md:grid-cols-2',
+        3: 'md:grid-cols-3',
+        4: 'md:grid-cols-4',
+    };
     
+    const rowClassMap:{[key: number]: string} = {
+        1: 'grid-rows-1',
+        2: 'grid-rows-2',
+        3: 'grid-rows-3',
+        4: 'grid-rows-4',
+    };
+
+    const colClass = colClassMap[cols] || 'grid-cols-2';
+    const rowClass = rowClassMap[rows] || 'grid-rows-1';
+    const gridClasses = `grid grid-cols-2 ${colClass} ${rowClass} gap-3`;
     return (
-        <div className={"flex flex-col"}>
+        <div className={"flex flex-col text-[12px] sm:text-xs text-center"}>
             <div
                 className={"w-24 h-24 overflow-hidden text-ellipsis mb-4"}>
                 {`The word is: ${alreadyFinished ? firstDrawing.target_word : '_______'}`}
             </div>
-            <div className={gridClasses}>
+            <div className={`${gridClasses}`}>
             {
                 turns.toReversed().map((turn, idx) => {
                     return turn.isDraw ? (
-                        <div className={`w-60 h-60`} key={idx}><UserTag userColors={userColors}
+                        <div className={`w-48 h-48`} key={idx}><UserTag userColors={userColors}
                                                                              name={turn.drawer_id == userId? 'You': turn.drawer_name}/>{` drew `}
-                            {alreadyFinished ? <img className={'border w-48 h-48'} alt='past drawing'
+                            {alreadyFinished ? <img className={'border border-gray-200 rounded-md p- w-40 h-40'} alt='past drawing'
                                                     src={`${turn.signed_url}`}/> :
                                 null}
-                        </div>) : (<div className={"w-60 h-60"}
+                        </div>) : (<div className={"w-40 h-40"}
                                         key={idx}><UserTag userColors={userColors} name={turn.guesser_id == userId? 'You': turn.guesser_name}/>
                         <p>{`guessed${alreadyFinished ? ` ${turn.target_word}` : ""}`}</p></div>)
                 })
