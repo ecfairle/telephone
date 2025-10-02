@@ -158,7 +158,7 @@ export default function Shuffle({ userId }: { userId: string }) {
               <GamePanels userColors={{}} userId={userId} gameId={game.game_id} drawings={gameData.drawings[game.game_id].drawings} nextPlayerUser={gameData.nextPlayers[game.game_id]} />
             </div>
           ))}
-          {allGameData && allGameData.map((drawings) => (
+          {allGameData && allGameData.filter(drawings => !userGames.some(game => game.game_id === drawings[0].game_id)).map((drawings) => (
               <div key={drawings[0].game_id} className={'flex-shrink-0 border border-gray-200 rounded-md p-'}>
                 <GamePanels userColors={{}} userId={userId} gameId={drawings[0].game_id} drawings={drawings} nextPlayerUser={null} isFullGame={true}/>
               </div>
