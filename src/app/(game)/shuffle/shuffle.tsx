@@ -83,6 +83,22 @@ export default function Shuffle({ userId }: { userId: string }) {
   const [allGameData, setAllGameData] = useState<(GameDrawing&{shuffle_available:boolean})[][]>([]);
   const { connectionStatus, userGames, gameData } = useGameEvents();
 
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const newOffset = offset + 10;
+      setOffset(newOffset)
+      const res = await getAllShuffleGames(newOffset, limit);
+      const newGameData: {
+        drawings: { [game_id: string]: { drawings: (GameDrawing & { shuffle_available: boolean })[] } };
+        nextPlayers: { [game_id: string]: User | null }
+      } = await res.json()
+      setAllGameData((allGameData) => { return [...allGameData, ...Object.values(newGameData.drawings).map(drawings => drawings.drawings)] });
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   useEffect(() => {
     const loadGamesData = async() => {
       const res = await getAllShuffleGames(0, limit);
@@ -147,20 +163,10 @@ export default function Shuffle({ userId }: { userId: string }) {
                 <GamePanels userColors={{}} userId={userId} gameId={drawings[0].game_id} drawings={drawings} nextPlayerUser={null} isFullGame={true}/>
               </div>
           ))}
-          {loadingMore? <Loader className={'text-blue-500 animate-spin m-auto'} size={30} /> : <Button variant={'blue'} onClick={async() => {
-            setLoadingMore(true);
-          const newOffset = offset + 10;
-          setOffset(newOffset)
-      const res = await getAllShuffleGames(newOffset, limit);
-      const newGameData:{
-    drawings: { [game_id: string]: {drawings: (GameDrawing&{shuffle_available:boolean})[]} };
-    nextPlayers: { [game_id: string]: User|null }} = await res.json()
-      setAllGameData((allGameData) => {return [...allGameData, ...Object.values(newGameData.drawings).map(drawings => drawings.drawings)]});
-      setLoadingMore(false);
-    }}>Load More..</Button>}
+              {loadingMore ? <Loader className={'text-blue-500 animate-spin m-auto'} size={30} /> : <Button variant={'blue'} onClick={loadMore}>Load More..</Button>}
+            </div>
           </div>
-          </div>
-          }
+        }
         </>
         }
       {/* Modal for no games found */}
