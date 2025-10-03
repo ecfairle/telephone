@@ -2,6 +2,7 @@
 import {GameDrawing, User} from "@/lib/data_definitions";
 import {Button} from "@/components/button";
 import {Brush} from "lucide-react";
+import React from "react";
 
 
 export default function GamePanels ({userColors, userId, gameId, roomId, drawings, nextPlayerUser, setIsPlaying, isFullGame} : {userColors: {[name:string]: string }, userId: string, gameId: string, roomId?: string, drawings: (GameDrawing&{shuffle_available:boolean})[], nextPlayerUser: User|null, setIsPlaying?: (gameId: string|null) => void, isFullGame?: boolean}) {
@@ -69,12 +70,16 @@ export default function GamePanels ({userColors, userId, gameId, roomId, drawing
             }
             {!myTurn || gameDone ?
                 <div className={"flex flex-row"}>
+                    
                     {alreadyFinished &&
                 <GameOverview userColors={userColors} firstDrawing={firstDrawing} gameDone={gameDone} alreadyFinished={alreadyFinished}
-                              turns={turns} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} userId={userId}/>}
+                              turns={turns} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} userId={userId}
+                              finalTurnDiv={(isFullGame || !gameDone) ?
+                              <GameOverviewPrePlay 
+                              userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} gameDone={gameDone}
+                              shuffleAvailable={lastDrawing.shuffle_available}/> : null}/>}
 
-                {!isFullGame &&<GameOverviewPrePlay userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} gameDone={gameDone}
-                shuffleAvailable={lastDrawing.shuffle_available}/>}
+                
                 </div>
                 :
                 <div className='w-40 h-40 ml-3'>
@@ -107,11 +112,25 @@ function GameOverviewPrePlay({userColors, nextPlayer, isGuessing, curPlayer, gam
 </div>)
 }
 
-function GameOverview({userColors, firstDrawing, alreadyFinished, turns, userId} :
-    {userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string, firstDrawing:GameDrawing, gameDone: boolean, alreadyFinished:boolean, turns:(GameDrawing&{isDraw: boolean})[], userId: string}) {
+function GameOverview({userColors, firstDrawing, alreadyFinished, turns, userId, finalTurnDiv} :
+    {userColors: {[name:string]: string},  nextPlayer:string|null, isGuessing: boolean, curPlayer:string, firstDrawing:GameDrawing, gameDone: boolean, alreadyFinished:boolean, turns:(GameDrawing&{isDraw: boolean})[], userId: string, finalTurnDiv?: React.ReactElement}) {
     
     // Calculate grid dimensions based on number of turns
-    const numTurns = turns.length;
+    const panels = turns.toReversed().map((turn, idx) => {
+                    return turn.isDraw ? (
+                        <div className={`w-48 h-48`} key={idx}><UserTag userColors={userColors}
+                                                                             name={turn.drawer_id == userId? 'You': turn.drawer_name}/>{` drew `}
+                            {alreadyFinished ? <img className={'border border-gray-200 rounded-md p- w-40 h-40 mx-auto'} alt='past drawing'
+                                                    src={`${turn.signed_url}`}/> :
+                                null}
+                        </div>) : (<div className={"w-40 h-40"}
+                                        key={idx}><UserTag userColors={userColors} name={turn.guesser_id == userId? 'You': turn.guesser_name}/>
+                        <p>{`guessed${alreadyFinished ? ` ${turn.target_word}` : ""}`}</p></div>)
+                });
+    if (finalTurnDiv) {
+        panels.push(<div className={`w-48 h-48`} key={turns.length + 1}>{finalTurnDiv}</div>);
+    }
+    const numTurns = panels.length;
     let rows, cols;
     
     if (numTurns <= 2) {
@@ -151,24 +170,14 @@ function GameOverview({userColors, firstDrawing, alreadyFinished, turns, userId}
     const rowClass = rowClassMap[rows] || 'grid-rows-1';
     const gridClasses = `grid grid-cols-2 ${colClass} ${rowClass} gap-3`;
     return (
-        <div className={"flex flex-col text-[12px] sm:text-xs text-center"}>
+        <div className={"flex flex-col text-center"}>
             <div
-                className={"w-24 h-24 overflow-hidden text-ellipsis mb-4"}>
+                className={"h-12 overflow-hidden text-ellipsis"}>
                 {`The word is: ${alreadyFinished ? firstDrawing.target_word : '_______'}`}
             </div>
             <div className={`${gridClasses}`}>
             {
-                turns.toReversed().map((turn, idx) => {
-                    return turn.isDraw ? (
-                        <div className={`w-48 h-48`} key={idx}><UserTag userColors={userColors}
-                                                                             name={turn.drawer_id == userId? 'You': turn.drawer_name}/>{` drew `}
-                            {alreadyFinished ? <img className={'border border-gray-200 rounded-md p- w-40 h-40'} alt='past drawing'
-                                                    src={`${turn.signed_url}`}/> :
-                                null}
-                        </div>) : (<div className={"w-40 h-40"}
-                                        key={idx}><UserTag userColors={userColors} name={turn.guesser_id == userId? 'You': turn.guesser_name}/>
-                        <p>{`guessed${alreadyFinished ? ` ${turn.target_word}` : ""}`}</p></div>)
-                })
+                panels
             }
             </div>
         </div>
