@@ -77,7 +77,7 @@ export default function GamePanels ({userColors, userId, gameId, roomId, drawing
                               finalTurnDiv={(isFullGame || !gameDone) ?
                               <GameOverviewPrePlay 
                               userColors={userColors} nextPlayer={nextPlayer} isGuessing={isGuessing} curPlayer={curPlayer} gameDone={gameDone}
-                              shuffleAvailable={lastDrawing.shuffle_available}/> : null}/>}
+                              shuffleAvailable={lastDrawing.shuffle_available}/> : undefined}/>}
 
                 
                 </div>
